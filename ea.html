@@ -279,6 +279,15 @@
 
 
 <script type="text/worker">
+    const buttonlist = ["input","display"];
+    buttonlist.forEach(button => {
+        on(`clicked:${button}`, function() {
+            setAttrs({
+                sheetTab: button
+            });
+        });
+    });
+
     on("sheet:opened", function() {
         setAttrs({sheetTab:"display"});
     });
