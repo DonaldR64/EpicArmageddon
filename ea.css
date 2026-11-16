@@ -1,7 +1,6 @@
 /*Configure the tab buttons*/
 .sheet-input,
-.sheet-display,
-.sheet-abilities {
+.sheet-display {
     display: none;
 }
 

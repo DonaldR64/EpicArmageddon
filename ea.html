@@ -2,7 +2,6 @@
 <div>
     <button type="action" name="act_input" >Input</button>
     <button type="action" name="act_display" >Display</button>
-    <button type="action" name="act_abilities" >Special Rules</button>
 </div>
 
 <div class="sheet-input">
@@ -340,7 +339,7 @@
 
 
 <script type="text/worker">
-    const buttonlist = ["input","display","abilities"];
+    const buttonlist = ["input","display"];
     buttonlist.forEach(button => {
         on(`clicked:${button}`, function() {
             setAttrs({
