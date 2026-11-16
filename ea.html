@@ -216,6 +216,7 @@
             <h4><span name="attr_special3"></span></h4>
             <h4><span name="attr_special4"></span></h4>
             <h4><span name="attr_special5"></span></h4>
+            <h4><span name="attr_criticalhit"></span></h4>
           </section>
 
           <section class="weapon">
@@ -360,16 +361,10 @@
 
             let specials = values.special || "Nil";
             specials = specials.split(";");
-            let special = [" "," "," "," "," "," "];
+            let special = new Array(6);
             for (let i=0;i<specials.length;i++) {
                 special[i] = specials[i].trim();
             }
-
-            if (values.criticalhit) {
-                special[5] = "Critical Hit: " + values.criticalhit;
-            }
-
-log(special)
 
             setAttrs({
                 "special0": special[0],
