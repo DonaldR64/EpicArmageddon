@@ -128,7 +128,7 @@ section {
 }
 
 input[type="hidden"][name="attr_faction"]:is([value="Steel Legion"],[value="Blood Pact"]) ~ .header :is(h1,h3){
-  color: black;
+  color: white;
 }
 
 
