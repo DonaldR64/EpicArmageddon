@@ -363,10 +363,10 @@
             name = name.split("//")[0].trim();
 
             let specials = values.special || "Nil";
-            specials = specials.split(",");
+            specials = specials.split(";");
             let special = new Array(10);
             for (let i=0;i<specials.length;i++) {
-                special[i] = specials[i];
+                special[i] = specials[i].trim();
             }
 
             
