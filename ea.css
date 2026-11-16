@@ -16,7 +16,7 @@
 
 .mysheet {
     width: 830px;
-    height: 630px;
+    height: 730px;
     padding: 15px 0px 0px 15px;
 }
 
@@ -33,14 +33,14 @@ input[type="hidden"][name="attr_faction"][value="Blood Pact"] ~ .mysheet {
 main {
   display: grid;
   width: 810px;
-  height: 610px;
+  height: 710px;
   grid-gap: 4px;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
-  grid-template-areas:"common   common    header   header header"
-                      "common   common    special   special special"
-                      "common   common    special   special special"
-                      "att      att       att      att      att"
+  grid-template-areas:"common   common    header   header"
+                      "common   common    special   special"
+                      "common   common    special   special"
+                      "att      att       att      att"
                       "weapon   weapon    weapon   weapon"
                       "weapon   weapon    weapon   weapon";
 }
