@@ -127,8 +127,8 @@ section {
   color: white;
 }
 
-input[type="hidden"][name="attr_faction"]:is([value="Steel Legion"],[value="Blood Pact"]) ~ .header :is(h1,h3){
-  color: white;
+input[type="hidden"][name="attr_faction"]:is([value="Eldar"],) ~ .header :is(h1,h3){
+  color: black;
 }
 
 
@@ -328,6 +328,10 @@ input[type="hidden"][name="attr_faction"]:is([value="Steel Legion"],[value="Bloo
   background-color: grey;
   text-align: center;
   align-items: center;
+}
+
+.weaponinfo p {
+    color: white;
 }
 
 /* Weapon 1 */
