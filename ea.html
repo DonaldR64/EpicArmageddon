@@ -216,7 +216,7 @@
             <h4><span name="attr_special3"></span></h4>
             <h4><span name="attr_special4"></span></h4>
             <h4><span name="attr_special5"></span></h4>
-            <h4><span name="attr_criticalhit"></span></h4>
+            <h4><span name="attr_criticalhitdisplay"></span></h4>
           </section>
 
           <section class="weapon">
@@ -366,6 +366,10 @@
                 special[i] = specials[i].trim();
             }
 
+            let crit = "Critical Hit: " + values.criticalhit;
+
+
+
             setAttrs({
                 "special0": special[0],
                 "special1": special[1],
@@ -374,7 +378,7 @@
                 "special4": special[4],
                 "special5": special[5],
                 "displayname": name,
-
+                "criticalhitdisplay": crit,
             });
         });    
     }); 
