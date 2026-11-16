@@ -74,7 +74,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon1number"></td>
+                    <td><input type="text" name="attr_weapon1number"></td>
                     <td><input type="text" name="attr_weapon1name"></td>    
                     <td><input type="text" name="attr_weapon1range"></td>
                     <td><input type="text" name="attr_weapon1fp"></td>
@@ -87,7 +87,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon2number"></td>
+                    <td><input type="text" name="attr_weapon2number"></td>
                     <td><input type="text" name="attr_weapon2name"></td>    
                     <td><input type="text" name="attr_weapon2range"></td>
                     <td><input type="text" name="attr_weapon2fp"></td>
@@ -100,7 +100,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon3number"></td>
+                    <td><input type="text" name="attr_weapon3number"></td>
                     <td><input type="text" name="attr_weapon3name"></td>    
                     <td><input type="text" name="attr_weapon3range"></td>
                     <td><input type="text" name="attr_weapon3fp"></td>
@@ -113,7 +113,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon4number"></td>
+                    <td><input type="text" name="attr_weapon4number"></td>
                     <td><input type="text" name="attr_weapon4name"></td>    
                     <td><input type="text" name="attr_weapon4range"></td>
                     <td><input type="text" name="attr_weapon4fp"></td>
@@ -126,7 +126,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon5number"></td>
+                    <td><input type="text" name="attr_weapon5number"></td>
                     <td><input type="text" name="attr_weapon5name"></td>    
                     <td><input type="text" name="attr_weapon5range"></td>
                     <td><input type="text" name="attr_weapon5fp"></td>
@@ -139,7 +139,7 @@
                         <option value = "Off">Off</option>
                         <option value = "Equipped">Equipped</option>
                     </select></td>
-                    <td><input type="number" name="attr_weapon6number"></td>
+                    <td><input type="text" name="attr_weapon6number"></td>
                     <td><input type="text" name="attr_weapon6name"></td>    
                     <td><input type="text" name="attr_weapon6range"></td>
                     <td><input type="text" name="attr_weapon6fp"></td>
@@ -308,8 +308,10 @@
             for (let i=0;i<specials.length;i++) {
                 special[i] = specials[i].trim();
             }
-
-            let crit = "Critical Hit: " + values.criticalhit;
+            let crit;
+            if (values.criticalhit) {
+                crit = "Critical Hit: " + values.criticalhit;
+            }
 
 
 
