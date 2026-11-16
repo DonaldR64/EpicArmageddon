@@ -27,6 +27,9 @@ input[type="hidden"][name="attr_faction"][value="Steel Legion"] ~ .mysheet {
 input[type="hidden"][name="attr_faction"][value="Blood Pact"] ~ .mysheet {
   background-color: darkred;
 }
+input[type="hidden"][name="attr_faction"][value="Collegia Titanica"] ~ .mysheet {
+  background-color: gold;
+}
 
 
 
@@ -128,7 +131,7 @@ section {
   color: white;
 }
 
-input[type="hidden"][name="attr_faction"]:is([value="Eldar"],) ~ .header :is(h1,h3){
+input[type="hidden"][name="attr_faction"]:is([value="Collegia Titanica"],) ~ .header :is(h1,h3){
   color: black;
 }
 
