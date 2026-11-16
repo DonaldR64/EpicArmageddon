@@ -28,7 +28,7 @@ input[type="hidden"][name="attr_faction"][value="Blood Pact"] ~ .mysheet {
   background-color: darkred;
 }
 input[type="hidden"][name="attr_faction"][value="Collegia Titanica"] ~ .mysheet {
-  background-color: gold;
+  background-color: darkkhaki;
 }
 
 
