@@ -331,7 +331,7 @@ input[type="hidden"][name="attr_faction"]:is([value="Eldar"],) ~ .header :is(h1,
   align-items: center;
 }
 
-.weaponinfo p {
+.weaponinfo span{
     color: white;
 }
 
