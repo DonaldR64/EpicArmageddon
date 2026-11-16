@@ -210,13 +210,12 @@
         </section>
 
           <section class="special">
-            <h4><span name="attr_special0"></span></h4>
-            <h4><span name="attr_special1"></span></h4>
-            <h4><span name="attr_special2"></span></h4>
-            <h4><span name="attr_special3"></span></h4>
-            <h4><span name="attr_special4"></span></h4>
-            <h4><span name="attr_special5"></span></h4>
-            <h4 style="color:darkred;"><span name="attr_criticalhitdisplay"></span></h4>
+            <h3><span name="attr_special0"></span></h3>
+            <h3><span name="attr_special1"></span></h3>
+            <h3><span name="attr_special2"></span></h3>
+            <h3><span name="attr_special3"></span></h3>
+            <h3><span name="attr_special4"></span></h3>
+            <h3 style="color:darkred;"><span name="attr_criticalhitdisplay"></span></h3>
           </section>
 
           <section class="weapon">
@@ -361,7 +360,7 @@
 
             let specials = values.special || "Nil";
             specials = specials.split(";");
-            let special = new Array(6);
+            let special = new Array(5);
             for (let i=0;i<specials.length;i++) {
                 special[i] = specials[i].trim();
             }
@@ -376,7 +375,6 @@
                 "special2": special[2],
                 "special3": special[3],
                 "special4": special[4],
-                "special5": special[5],
                 "displayname": name,
                 "criticalhitdisplay": crit,
             });
