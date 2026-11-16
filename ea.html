@@ -360,12 +360,14 @@
 
             let specials = values.special || "Nil";
             specials = specials.split(";");
-            let special = [" "," "," "," "," "," "];
+            let special = new Array(6);
             for (let i=0;i<specials.length;i++) {
                 special[i] = specials[i].trim();
             }
+
             if (values.criticalhit && values.criticalhit !== "") {
-                special[5] = values.criticalhit;
+                special.push(" ");
+                special.push(values.criticalhit)
             }
 
 
