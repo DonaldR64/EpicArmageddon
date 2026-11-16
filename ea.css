@@ -330,7 +330,7 @@ input[type="hidden"][name="attr_faction"]:is([value="Collegia Titanica"],) ~ .he
   grid-area: weaponinfo;
   display: grid;
   grid-gap: 2px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
+  grid-template-columns: 4fr 1fr 2fr 2fr;
   grid-template-rows: 1fr;
   background-color: grey;
   text-align: center;
@@ -349,8 +349,7 @@ input[type="hidden"][value="Off"].weapon1-status ~ .weapon1{
 .weapon1 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     background-color: white;
     text-align: center;
     align-items: center;
@@ -365,8 +364,8 @@ input[type="hidden"][value="Off"].weapon2-status ~ .weapon2{
 .weapon2 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     text-align: center;
     align-items: center;
     padding: 3px;
@@ -390,8 +389,8 @@ input[type="hidden"][value="Equipped"].weapon3-status ~ .weapon3{
 .weapon3 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     text-align: center;
     align-items: center;
     padding: 3px;
@@ -413,8 +412,8 @@ input[type="hidden"][value="Equipped"].weapon4-status ~ .weapon4{
 .weapon4 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     text-align: center;
     align-items: center;
     padding: 3px;
@@ -435,8 +434,8 @@ input[type="hidden"][value="Equipped"].weapon5-status ~ .weapon5{
 .weapon5 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     text-align: center;
     align-items: center;
     padding: 3px;
@@ -458,8 +457,8 @@ input[type="hidden"][value="Equipped"].weapon6-status ~ .weapon6{
 .weapon6 {
     display: grid;
     grid-gap: 1px;
-  grid-template-columns: 3fr 1fr 1fr 2fr 2fr;
-    grid-template-rows: 1;
+
+  grid-template-columns: 4fr 1fr 2fr 2fr;    grid-template-rows: 1;
     text-align: center;
     align-items: center;
     padding: 3px;
@@ -471,39 +470,3 @@ input[type="hidden"][value="Equipped"].weapon6-status ~ .weapon6{
 
 
 
-
-
-
-.spheader {
-  text-align: center;
-}
-
-.spheader h2 {
-  text-align: center;
-  color: white;
-}
-
-
-
-.spbody h4 {
-  color: white;
-}
-
-.item span {
-  font-size: 14px;
-}
-
-.spbody {
-  color: white;
-  align-items: center;
-  text-align: center;
-  padding: 0px 0px 0px 20px;
-}
-
-.item {
-  align-items: left;
-  width: fit-content;
-  padding: 5px;
-  text-align: left;
-  margin-bottom: 1em;
-}
