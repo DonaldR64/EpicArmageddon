@@ -16,7 +16,7 @@
 
 .mysheet {
     width: 830px;
-    height: 730px;
+    height: 530px;
     padding: 15px 0px 0px 15px;
 }
 
@@ -33,7 +33,7 @@ input[type="hidden"][name="attr_faction"][value="Blood Pact"] ~ .mysheet {
 main {
   display: grid;
   width: 810px;
-  height: 710px;
+  height: 510px;
   grid-gap: 4px;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
