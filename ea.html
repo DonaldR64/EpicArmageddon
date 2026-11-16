@@ -216,10 +216,6 @@
             <h4><span name="attr_special3"></span></h4>
             <h4><span name="attr_special4"></span></h4>
             <h4><span name="attr_special5"></span></h4>
-            <h4><span name="attr_special6"></span></h4>
-            <h4><span name="attr_special7"></span></h4>
-            <h4><span name="attr_special8"></span></h4>
-            <h4><span name="attr_special9"></span></h4>
           </section>
 
           <section class="weapon">
@@ -357,19 +353,19 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["special","character_name"], function(values) {
+        getAttrs(["special","character_name","criticalhit"], function(values) {
             
             let name = values.character_name;
             name = name.split("//")[0].trim();
 
             let specials = values.special || "Nil";
             specials = specials.split(";");
-            let special = new Array(10);
+            let special = new Array(6);
             for (let i=0;i<specials.length;i++) {
                 special[i] = specials[i].trim();
             }
 
-            
+            special[specials.length] = values.criticalhit;
 
 
 
@@ -380,10 +376,6 @@
                 "special3": special[3],
                 "special4": special[4],
                 "special5": special[5],
-                "special6": special[6],
-                "special7": special[7],
-                "special8": special[8],
-                "special9": special[9],
                 "displayname": name,
 
             });
