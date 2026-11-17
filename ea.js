@@ -5,6 +5,9 @@ const EA = (() => {
     const pageInfo = {};
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
 
+    const formationMarkers = [];
+
+
     let Units = {};
     let HexMap = {}; 
     let UnitIDList = []; //used in create formation
@@ -613,7 +616,7 @@ const EA = (() => {
 
     class Unit {
         constructor(id) {
-            let token = findObjs({_type:"graphic", id: id})[0];
+            let token = getObj("graphic",id);
             if (!token) {return};
             let charID = token.get("represents");
             let char = getObj("character", charID); 
@@ -720,10 +723,17 @@ log(weapons)
 
 
     const DefineMap = () => {
-        let path = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map", stroke: "#93c47d"})[0];
-        let vertices = translatePoly(path);
+        let tokens = findObjs({_pageid: Campaign().get("playerpageid"),_type: "graphic",_subtype: "token",layer: "map"});
+        let map = tokens.find(e => e.get("name") === "Map");
+        let cX = map.get("left");
+        let cY = map.get("top");
+        let x0 = cX - map.get("width")/2;
+        let x1 = cX + map.get("width")/2;
+        let y0 = cY - map.get("height")/2;
+        let y1 = cY + map.get("height")/2;
+
         _.each(HexMap,hex => {
-             if (hex.centre.x >= vertices[0].x && hex.centre.x <= vertices[1].x && hex.centre.y >= vertices[0].y && hex.centre.y <= vertices[1].y) {hex.offboard = false};
+             if (hex.centre.x >= x0 && hex.centre.x <= x1 && hex.centre.y >= y0 && hex.centre.y <= y1) {hex.offboard = false};
         })
     }
 
@@ -1351,6 +1361,7 @@ log(weapons)
             attachedIDs: {}, //ref by tokenID of the main unit, is the IDs in an array of leaders, HQs attached to it
            
             factions: [[],[]],
+            formations: [0,0],
 
         }
     
@@ -1381,7 +1392,16 @@ log(weapons)
         return player;
     }
 
-
+    const Element = (array,word) => {
+        let element;
+        for (let i=0;i<array.length;i++) {
+            if (array[i].includes(word)) {
+                element = array[i];
+                break;
+            }
+        }
+        return element;
+    }
 
 
 
@@ -1451,34 +1471,8 @@ log(weapons)
     }
 
 
-    const Naming = (unit,coreNum) => {
-        let name,init,surname;
-        let platoons = ["1st","2nd","3rd","4th"];
+    const Naming = (token) => {
 
-        if (unit.core) {
-            pltNum = coreNum;
-            if (unit.player === 0) {
-                let coNum = Math.ceil((coreNum + 1)/3);
-                pltNum = coreNum - ((coNum -1) * 3);
-                name = platoons[pltNum] + " Plt./" + platoons[coNum - 1] + " Co.";
-            } else {
-                name = platoons[pltNum] + " Platoon";
-            }
-            coreNum++;
-        } else {
-            name = unit.charName;
-        }
-
-        unit.name = name;
-        if (name) {
-            unit.name = name;
-            unit.token.set({name: name})
-        }
-        if (unit.type === "Leader" || unit.type === "HQ" || unit.type === "Artillery Token" || unit.type === "Support") {
-            toFront(unit.token);
-        }
-
-        return coreNum;
 
     }
 
@@ -1737,108 +1731,44 @@ log(weapons)
         })
     }
 
-    const CreateFormation2 = (msg) => {
-        let formNum = msg.content.split(";")[1];
-        let leaderIDs = [];
-        let formation = DeepCopy(Scenario.formations[formNum]);
-        let artilleryID;
-        let hqID = "";
-
-        _.each(UnitIDList,unitID => {
-            let unit = Units[unitID];
-            unit.formationID = formNum;
-            state.EA.unitInfo[unitID] = formNum;
-            if (unit.type === "Leader") {
-                leaderIDs.push(unitID);
-            }
-            if (unit.type === "HQ") {
-                hqID = unitID;
-                unit.name = formation.hqName;
-                unit.token.set({name: formation.hqName})
-            }
-            if (formation.type === "Offboard Artillery" && unit.type !== "Artillery Token") {
-                artilleryID = unit.id;
-            }
-        })
-
-
-        if (formation.type === "Offboard Artillery") {
-            if (!artilleryID) {
-                sendChat("","Error with Artillery ID")
-            }
-            _.each(UnitIDList,unitID => {
-                let unit = Units[unitID];
-
-                if (unit.type === "Artillery Token") {
-                    let abilArray = findObjs({_type: "ability", _characterid: unit.charID});
-                    //clear old abilities
-                    for(let a=0;a<abilArray.length;a++) {
-                        abilArray[a].remove();
-                    } 
-                    AddAbility("Check","!ArtCheck;Offboard;@{selected|token_id};" + artilleryID,unit.charID);
-                    if (unit.name.includes("HE")) {
-                        AddAbility("FFE","!FFE;@{selected|token_id};" + artilleryID +";HE;Offboard",unit.charID);
-                    }
-                    if (unit.name.includes("Smoke")) {
-                        AddAbility("FFE","!FFE;@{selected|token_id};" + artilleryID +";Smoke;Offboard",unit.charID);
-                    }
-
-    //others
-
-
-                }
-            })
-        }
-
-
-
-        formation.unitIDs = UnitIDList;
-        formation.leaderIDs = leaderIDs;
-        formation.hqID = hqID;
-
-        state.EA.formationInfo[formNum] = formation;
-
-        sendChat("",formation.name + " Entered");
-    }
-
-
 
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
-        if (state.EA.scenario === "") {
-            sendChat("","Pick Scenario");
-            return;
-        }
-
-        let coreNum = 0;
-        UnitIDList= [];
+        nameList = {};
+        let formationID = stringGen();
+        let player = parseInt(msg.content.split(";")[1]);    
+        let unitIDs = []; 
+        let health = 0;
         _.each(msg.selected,selected => {
             let id = selected._id;
+            unitIDs.push(id);
             let unit = new Unit(id);
-            let sides = unit.token.get("sides").split("|").length;
-            unit.token.set({
-                bar1_value: sides,
-                disableSnapping: true,
-                disableTokenMenu: true,
-            })
-            if (unit.type === "Helicopter") {
-                unit.token.set(SM.flying,true);
+            unit.player = player;
+            if (state.EA.factions[player].includes(unit.faction) === false) {
+                state.EA.factions[player].push(unit.faction);
             }
+            let name = unit.charName;
+            if (nameList[name]) {
+                nameList[name]++;
+                name += " " + nameList[name];
+            } else {
+                nameList[name] = 1;
+            }
+            let dc = Element(unit.special,"Damage Capacity") || 1;
+            health += parseInt(dc.replace(/[^\d]/g,""));
+            state.EA.unitInfo[id] = formationID;
+            unit.formationID = formationID;
+            //let formNum = state.EA.formations[player];
+            //let formMarker = formationMarkers[formNum];
+            //unit.token.set("status_" + formMarker,true);
+            //AddAbilities(unit);
 
-            coreNum = Naming(unit,coreNum);
-            AddAbilities(unit);
-            UnitIDList.push(id);
-            if (unit.type !== "Artillery Token") {
-                unit.SetReady(true);
-                unit.SetDisrupt(false);
-                unit.SetReduced(false);
-            }
         })
-        SetupCard("Formation Creation","","Neutral");
-        outputCard.body.push("Pick their Formation");
-        _.each(Scenario.formations,formation => {
-            ButtonInfo(formation.name,"!CreateFormation2;" + formation.id);
-        })
+        state.EA.formationInfo = {
+            unitIDs: unitIDs,
+            startingHealth: health,
+        }
+        state.EA.formations[player]++;
         PrintCard();
     }
 
@@ -5114,8 +5044,6 @@ log("Not Active, Distance > 1 or Remaining move === 0")
                 log(pageInfo);
                 log("STATE");
                 log(state.EA);
-                log("Units");
-                log(Units);
                 break;
             case '!ClearState':
                 ClearState(msg);
@@ -5132,8 +5060,9 @@ log("Not Active, Distance > 1 or Remaining move === 0")
             case '!UnitInfo':
                 UnitInfo(msg);
                 break;
-            
-
+            case '!CreateFormation':
+                CreateFormation(msg);
+                break;
         }
     };
 
