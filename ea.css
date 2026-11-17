@@ -40,9 +40,9 @@ main {
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
   grid-template-areas:"common   common    header header   header"
-                      "common   common    special special   special"
-                      "common   common    special special   special"
-                      "common   common       att     att      att"
+                      "common   common    att    att      att"
+                      "common   common    special special special"
+                      "common   common    special special special"
                       "weapon   weapon    weapon weapon   weapon"
                       "weapon   weapon    weapon weapon   weapon"
                       "weapon   weapon    weapon weapon   weapon";
