@@ -1323,7 +1323,6 @@ log(weapons)
         HexMap = {}; 
         Units = {};
         
-        RemoveMoveMarkers();
         //clear token info
         let tokens = findObjs({
             _pageid: Campaign().get("playerpageid"),
@@ -1365,13 +1364,6 @@ log(weapons)
 
         }
     
-        //Collapsed Bridge to Bridge
-        let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
-        _.each(paths,path => {
-            if (path.get("stroke").toLowerCase() === "#ff0000") {
-                path.set("stroke","#000000");
-            }
-        })
 
         CleanMap("All");
         BuildMap();
@@ -1416,7 +1408,7 @@ log(weapons)
         });
         if (type) {
             if (type === "All") {
-                list = ["Wreck","Fire","Rubble","BurnOut","Smoke","Dispersed Smoke","Random Minefield","Placed Minefield","Move Marker","Collapsed Bridge"]; //names of tokens to remove
+                list = []; //names of tokens to remove
             } else {
                 list = [type];
             }
