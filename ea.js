@@ -626,6 +626,9 @@ const EA = (() => {
             this.player = Player(faction);
 
             this.type = attributes.type;
+
+            
+
             this.speed = parseInt(attributes.speed);
             this.armour = parseInt(attributes.armour) || 7;
             this.cc = parseInt(attributes.cc) || 7;
