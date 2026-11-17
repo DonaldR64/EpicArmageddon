@@ -626,12 +626,11 @@ const EA = (() => {
             let attributes = AttributeArray(char.id);  
 
             this.faction = attributes.faction || "Neutral";
-            this.player = Player(faction);
+            this.player = Player(this.faction);
 
             this.type = attributes.type;
 
-            
-
+        
             this.speed = parseInt(attributes.speed);
             this.armour = parseInt(attributes.armour) || 7;
             this.cc = parseInt(attributes.cc) || 7;
@@ -657,7 +656,8 @@ const EA = (() => {
                 if (!wname || wname === "") {
                     wname = attributes["weapon" + (i-1) + "name"];
                 }
-                let wnum = text.match(/\d+x/i);[0]; //get out 2x or 3x
+                let wnum = wname.match(/\d+x/i) || ["1"]; //get out 2x or 3x
+                wnum = wnum[0];
                 wname = wname.replace(wnum,"").trim();
                 wnum = parseInt(wnum);
 
@@ -681,7 +681,7 @@ const EA = (() => {
             }
 
             this.weapons = weapons;
-log(special)
+log(this.special)
 log(weapons)
             this.name = token.get("name");
             this.id = id;
@@ -1734,27 +1734,28 @@ log(weapons)
 
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
-        nameList = {};
         let formationID = stringGen();
         let player = parseInt(msg.content.split(";")[1]);    
         let unitIDs = []; 
         let health = 0;
+        let nameList = {};
         _.each(msg.selected,selected => {
             let id = selected._id;
             unitIDs.push(id);
             let unit = new Unit(id);
             unit.player = player;
-            if (state.EA.factions[player].includes(unit.faction) === false) {
-                state.EA.factions[player].push(unit.faction);
-            }
             let name = unit.charName;
             if (nameList[name]) {
-                nameList[name]++;
-                name += " " + nameList[name];
+                nameList[name].units++;
+                name += " " + nameList[name].units;
             } else {
-                nameList[name] = 1;
+                nameList[name] = {
+                    firstID: id,
+                    units: 1,
+                }
             }
-            let dc = Element(unit.special,"Damage Capacity") || 1;
+            unit.token.set("name",name);
+            let dc = Element(unit.special,"Damage Capacity") || "1";
             health += parseInt(dc.replace(/[^\d]/g,""));
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
@@ -1762,13 +1763,27 @@ log(weapons)
             //let formMarker = formationMarkers[formNum];
             //unit.token.set("status_" + formMarker,true);
             //AddAbilities(unit);
-
         })
+        
+        _.each(nameList,info => {
+            if (info.units > 1) {
+                let unit = Units[info.firstID];
+                let newName = unit.token.get("name") + " 1";
+                unit.name = newName;
+                unit.token.set("name",newName);
+            }
+        })
+
+
         state.EA.formationInfo = {
             unitIDs: unitIDs,
             startingHealth: health,
         }
         state.EA.formations[player]++;
+        let faction = Units[unitIDs[0]].faction;
+        if (state.EA.factions[player].includes(faction) === false) {
+            state.EA.factions[player].push(faction);
+        }
         PrintCard();
     }
 
