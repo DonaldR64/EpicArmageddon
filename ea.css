@@ -369,6 +369,11 @@ input[type="hidden"][value="Off"].weapon2-status ~ .weapon2{
     text-align: center;
     align-items: center;
     padding: 3px;
+}
+input[type="hidden"][value="white"].wpn2colour ~ .weapon2{
+    background-color: white;
+}
+input[type="hidden"][value="lightgrey"].wpn2colour ~ .weapon2{
     background-color: lightgrey;
 }
 
@@ -394,8 +399,12 @@ input[type="hidden"][value="Equipped"].weapon3-status ~ .weapon3{
     text-align: center;
     align-items: center;
     padding: 3px;
+}
+input[type="hidden"][value="white"].wpn3colour ~ .weapon3{
     background-color: white;
-
+}
+input[type="hidden"][value="lightgrey"].wpn3colour ~ .weapon3{
+    background-color: lightgrey;
 }
 
 
@@ -417,8 +426,12 @@ input[type="hidden"][value="Equipped"].weapon4-status ~ .weapon4{
     text-align: center;
     align-items: center;
     padding: 3px;
+}
+input[type="hidden"][value="white"].wpn4colour ~ .weapon4{
+    background-color: white;
+}
+input[type="hidden"][value="lightgrey"].wpn4colour ~ .weapon4{
     background-color: lightgrey;
-
 }
 
 
@@ -439,7 +452,12 @@ input[type="hidden"][value="Equipped"].weapon5-status ~ .weapon5{
     text-align: center;
     align-items: center;
     padding: 3px;
+}
+input[type="hidden"][value="white"].wpn5colour ~ .weapon5{
     background-color: white;
+}
+input[type="hidden"][value="lightgrey"].wpn5colour ~ .weapon5{
+    background-color: lightgrey;
 }
 
 
@@ -462,8 +480,12 @@ input[type="hidden"][value="Equipped"].weapon6-status ~ .weapon6{
     text-align: center;
     align-items: center;
     padding: 3px;
+}
+input[type="hidden"][value="white"].wpn6colour ~ .weapon6{
+    background-color: white;
+}
+input[type="hidden"][value="lightgrey"].wpn6colour ~ .weapon6{
     background-color: lightgrey;
-
 }
 
   
