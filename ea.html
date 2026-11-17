@@ -48,7 +48,9 @@
             </select>           
           </div>
     </div>    
-    <label>Notes:</label><input type="text" name="attr_special">
+    <label>Notes Line 1, use ',' to seperate:</label><input type="text" name="attr_special0">
+    <label>Notes Line 2:</label><input type="text" name="attr_special1">
+    <label>Notes Line 3:</label><input type="text" name="attr_special2">
     <label>Critical Hit Effect:</label><input type="text" name="attr_criticalhit">
 
     <div class="row">
@@ -207,8 +209,6 @@
             <h3><span name="attr_special0"></span></h3>
             <h3><span name="attr_special1"></span></h3>
             <h3><span name="attr_special2"></span></h3>
-            <h3><span name="attr_special3"></span></h3>
-            <h3><span name="attr_special4"></span></h3>
             <h3 style="color:darkred;"><span name="attr_criticalhitdisplay"></span></h3>
           </section>
 
@@ -289,21 +289,19 @@
     });
 
     on("change:attrs sheet:opened", function() { 
-        getAttrs(["special","character_name","criticalhit","weapon2name","weapon3name","weapon4name","weapon5name","weapon6name"], function(values) {
+        getAttrs(["character_name","criticalhit","weapon2name","weapon3name","weapon4name","weapon5name","weapon6name","special0"], function(values) {
             
             let name = values.character_name;
             name = name.split("//")[0].trim();
 
-            let specials = values.special || "Nil";
-            specials = specials.split(";");
-            let special = new Array(5);
-            for (let i=0;i<specials.length;i++) {
-                special[i] = specials[i].trim();
-            }
             let crit;
             if (values.criticalhit) {
                 crit = "Critical Hit: " + values.criticalhit;
             }
+
+            let special = values.special0 || "Nil";
+
+
 
             let w2name = values.weapon2name;
             let w3name = values.weapon3name;
@@ -324,11 +322,6 @@
 
 
             setAttrs({
-                "special0": special[0],
-                "special1": special[1],
-                "special2": special[2],
-                "special3": special[3],
-                "special4": special[4],
                 "displayname": name,
                 "criticalhitdisplay": crit,
                 "wpn2colour": w2c,
@@ -336,7 +329,7 @@
                 "wpn4colour": w4c,
                 "wpn5colour": w5c,
                 "wpn6colour": w6c,
-
+                "special0": special,
 
             });
         });    

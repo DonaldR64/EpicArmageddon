@@ -635,8 +635,15 @@ const EA = (() => {
             this.ff = parseInt(attributes.ff) || 7;
             this.init = parseInt(attributes.initiative);
 
-            this.special = attributes.special || " ";
+            let s0 = attributes.special0.split(',').map(e => e.trim());
+            let s1 = attributes.special1.split(",").map(e => e.trim());
+            let s2 = attributes.special2.split(",").map(e => e.trim());
+
+
+            this.special = [].concat(s0,s1,s2);
             this.critical = attributes.criticalhit;
+
+            this.height = (this.special.includes("Tall")) ? 2:1;
 
             let weapons = [];
             for (let i=1;i<6;i++) {
@@ -673,6 +680,7 @@ const EA = (() => {
             }
 
             this.weapons = weapons;
+log(special)
 log(weapons)
             this.name = token.get("name");
             this.id = id;
