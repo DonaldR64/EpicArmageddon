@@ -646,6 +646,10 @@ const EA = (() => {
                 if (!wname || wname === "") {
                     wname = attributes["weapon" + (i-1) + "name"];
                 }
+                let wnum = text.match(/\d+x/i);[0]; //get out 2x or 3x
+                wname = wname.replace(wnum,"").trim();
+                wnum = parseInt(wnum);
+
                 let wrange = attributes["weapon" + i + "range"]; //a # or FF or CC
                 let wfp = attributes["weapon" + i + "fp"];
                 let wtraits = attributes["weapon" + i + "traits"] || " ";
@@ -654,6 +658,7 @@ const EA = (() => {
                 
                 let weapon = {
                     name: wname,
+                    number: wnum,
                     range: wrange,
                     fp: wfp,
                     traits: wtraits,
@@ -665,7 +670,7 @@ const EA = (() => {
             }
 
             this.weapons = weapons;
-
+log(weapons)
             this.name = token.get("name");
             this.id = id;
             this.charName = attributes.displayname;
@@ -680,7 +685,7 @@ const EA = (() => {
             }
             this.formationID = formationID;
 
-            let transportID = Object.keys(state.EA.passengerID).find(key => state.EA.passengerID[key] === id);
+            //let transportID = Object.keys(state.EA.passengerID).find(key => state.EA.passengerID[key] === id);
 
             Units[id] = this;
 
