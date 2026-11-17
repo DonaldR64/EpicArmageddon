@@ -1788,8 +1788,6 @@ log(weapons)
     }
 
 
-
-
     const PickScenario = (msg) => {
         let Tag = msg.content.split(";");
         state.EA.scenario = "Scenario " + Tag[1];
