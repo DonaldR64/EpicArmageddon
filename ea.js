@@ -10,6 +10,8 @@ const EA = (() => {
     let Units = {};
     let Formations = {};
     let HexMap = {}; 
+    let strategyFlag = false;
+
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -1480,7 +1482,7 @@ const EA = (() => {
     
         state.EA = {
             turn: 0,
-            playerIDs: ["",""], //set once a player activates their first formation in game
+            playerIDs: ["",""], //playerID of player 0 or 1
             phase: "End",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
@@ -1561,33 +1563,43 @@ const EA = (() => {
 
 
     const RollD6 = (msg) => {
-        let Tag = msg.content.split(";");
         PlaySound("Dice");
         let roll = randomInteger(6);
-        if (Tag.length === 1) {
-            let playerID = msg.playerid;
-            let faction = "Neutral";
-            if (msg.selected) {
-                let id = msg.selected[0]._id;
-                if (id) {
-                    let tok = findObjs({_type:"graphic", id: id})[0];
-                    let character = getObj("character", tok.get("represents")); 
-                    faction = Attribute(character,"faction");
-                    if (!state.BoB.players[playerID] || state.BoB.players[playerID] === undefined) {
-                        state.BoB.players[playerID] = faction;
+        let playerID = msg.playerid;
+        let player = 2;
+        if (msg.selected) {
+            let id = msg.selected[0]._id;
+            if (id) {
+                let unit = Units[id];
+                if (unit) {
+                    player = unit.player;
+                    if (state.EA.playerIDs[player] === "") {
+                        state.EA.playerIDs[player] = playerID;
                     }
+                } else {
+                    sendChat("","Click on one of your Units then select Roll again");
+                    return;
                 }
-            } else if (!state.BoB.players[playerID] || state.BoB.players[playerID] === undefined) {
+            }
+        } else {
+            player = state.EA.playerIDs.indexOf(playerID) || 2;
+            if (player === 2) {
                 sendChat("","Click on one of your Units then select Roll again");
                 return;
-            } else {
-                faction = state.BoB.players[playerID];
             }
+        }
+        let faction = state.EA.factions[player][0] || "Neutral";
+        if (strategyFlag === true) {
+            SetupCard("Strategy Roll","",faction);
+            outputCard.body.push(DisplayDice(roll,Factions[faction].dice,40));
+            let strat = Factions[faction].strategy;
+            let result = roll + strat;
+            outputCard.body.push("Strategy Rating: " + strat);
+            outputCard.body.push("Result: " + result);
+            PrintCard();
+        } else {
             let res = "/direct " + DisplayDice(roll,Factions[faction].dice,40);
             sendChat("player|" + playerID,res);
-        } else {
-            let type = Tag[1];
-            //type being used for times where fed back by another function
         }
     }
 
@@ -1622,14 +1634,12 @@ const EA = (() => {
     }
 
     StrategyPhase = () => {
-        
-
-
-
-
-
-
-
+        SetupCard("Turn " + state.EA.turn,"Strategy Phase","Neutral");
+        outputCard.body.push("Both Players roll a Dice");
+        outputCard.body.push("Their Armies Strategy Rating will be added");
+        outputCard.body.push("Highest Result Chooses who goes first");
+        PrintCard();
+        let strategyFlag = true;
     }
 
 
@@ -2963,8 +2973,9 @@ log("Checking " + unit.name);
             case '!NextPhase':
                 NextPhase();
                 break;
-
-
+            case '!RollD6':
+                RollD6(msg);
+                break;
 
 
         }
