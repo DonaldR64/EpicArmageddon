@@ -1644,7 +1644,7 @@ const EA = (() => {
 
     ActionPhase = () => {
         SetupCard("Turn " + state.EA.turn,"Action Phase","Neutral");
-
+        
 
 
 
