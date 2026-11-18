@@ -729,6 +729,8 @@ log(weapons)
 
         MakeLeader() {
             let formation = Formations[this.formationID];
+    log(formation)
+    return
             let aura = formation.activated === false ? "#00ff00":"#000000";
             this.token.set({
                 aura1_color: aura,
@@ -754,17 +756,17 @@ log(weapons)
             this.activated = false;
             this.health = 0;
             this.startingHealth = 0;
+
+            Formations[id] = this;
+
+            log(this)
         }
-        addUnit(id) {
+        AddUnit(id) {
             if (this.unitIDs.includes(id) === false) {
                 this.unitIDs.push(id);
-
-
-
-
             }
         }
-        removeUnit(id) {
+        RemoveUnit(id) {
             let index = this.unitIDs.indexOf(id);
             if (index > -1) {
                 this.unitIDs.splice(index,1);
@@ -773,7 +775,19 @@ log(weapons)
                 this.leaderID = this.unitIDs[0];
                 Units[this.unitIDs[0]].MakeLeader();
             }
+            if (this.unitIDs.length === 0) {
+                this.RemoveFormation();
+            }
         }
+
+        RemoveFormation() {
+
+
+
+
+
+        }
+
 
 
 
@@ -1854,7 +1868,7 @@ log(weapons)
                 unitIDs.push(id);
             }
 
-            formation.addUnit(id);
+            formation.AddUnit(id);
             //AddAbilities(unit);
         })
 
