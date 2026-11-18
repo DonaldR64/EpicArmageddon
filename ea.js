@@ -11,7 +11,7 @@ const EA = (() => {
     let Formations = {};
     let HexMap = {}; 
     let strategyFlag = [false,false];
-
+    let lastUnitID = "";
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -1612,22 +1612,16 @@ const EA = (() => {
 
 
         }
-        let phases = ["Strategy","Action","End"];
-        let index = (phases.indexOf(phase) + 1);
-        if (index > 2) {
-            index = 0
+        phase = (phase === "End") ? "Strategy":"End";
+        if (phase === "Strategy") {
             state.EA.turn++;
-        };
-        phase = phases[index];
+        }
         state.EA.phase = phase;
         switch(phase) {
             case 'Strategy':
                 StrategyPhase();
                 break;
-            case 'Action':
-                ActionPhase();
-                break;
-            case 'Strategy':
+            case 'End':
                 EndPhase();
                 break;
         }
@@ -1635,21 +1629,31 @@ const EA = (() => {
 
     StrategyPhase = () => {
         SetupCard("Turn " + state.EA.turn,"Strategy Phase","Neutral");
-        outputCard.body.push("Both Players roll a Dice");
+        let higherStrat = state.EA.strategy[0] > state.EA.strategy[1] ? 0:1;
+        if (state.EA.strategy[0] === state.EA.strategy[1]) {
+            higherStrat = randomInteger(2) - 1;
+        }
+        let hsFaction = state.EA.factions[higherStrat][0];
+        outputCard.body.push("Tunnellers then Teleporting Units are placed, alternating");
+        outputCard.body.push("The " + hsFaction + " Player determines who places these first");
+        outputCard.body.push("[hr]");
+        outputCard.body.push("Both Players Then Roll a Dice");
         outputCard.body.push("Their Armies Strategy Rating will be added");
-        outputCard.body.push("Highest Result Chooses who goes first");
+        outputCard.body.push("Highest Result Chooses who Activates first");
+        outputCard.body.push("Ties go to the player who LOST the last Strategy Roll");
+        outputCard.body.push("Or a Reroll if Turn 1");
         PrintCard();
         strategyFlag = [true,true];
     }
 
-    ActionPhase = () => {
-        SetupCard("Turn " + state.EA.turn,"Action Phase","Neutral");
-        
+    EndPhase = () => {
+        SetupCard("Turn " + state.EA.turn,"End Phase","Neutral");
 
 
 
 
 
+        PrintCard();
     }
 
 
@@ -1940,7 +1944,9 @@ const EA = (() => {
             unit.token.set("name",name);
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
-            unit.token.set("status_" + marker,true);
+            if (msg.selected.length > 1) {
+                unit.token.set("status_" + marker,true);
+            }
             unit.token.set("disableSnapping",false);
             if (unit.dc > 1) {
                 unit.token.set({
@@ -1954,7 +1960,7 @@ const EA = (() => {
                     bar2_value: unit.shields,
                     bar2_max: unit.shields,
                     showplayers_bar2: true,
-                    aura2_color: "#0000ff",
+                    aura2_color: "#ff00ff",
                     aura2_opacity: 1,
                     aura2_radius: 0.25,
                     aura2_options: "circleborder",
