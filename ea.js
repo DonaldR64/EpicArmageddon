@@ -1875,10 +1875,13 @@ log(weapons)
                     bar2_value: unit.shields,
                     bar2_max: unit.shields,
                     showplayers_bar2: true,
+                    aura2_color: "#0000ff",
+                    aura2_opacity: 1,
+                    aura2_radius: 0.25,
+                    aura2_options: "circleborder",
                 })
             }
             if (unit.special.includes("Character")) {
-                unit.token.set(SM.redflag,true);
                 formation.AddUnit(id,true);
             } else {
                 formation.AddUnit(id);
@@ -2550,7 +2553,11 @@ log("Checking " + unit.name);
 
 
 
-
+    const TokenInfo = (msg) => {
+        let id = msg.selected[0]._id;
+        let token = getObj("graphic",id);
+        log(token)
+    }
 
 
 
@@ -2891,6 +2898,8 @@ log("Checking " + unit.name);
             case '!CreateFormation':
                 CreateFormation(msg);
                 break;
+
+
         }
     };
 
