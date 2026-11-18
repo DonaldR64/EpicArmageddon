@@ -782,17 +782,15 @@ log(weapons)
                 Units[this.unitIDs[0]].MakeLeader();
             }
             if (this.unitIDs.length === 0) {
-                this.RemoveFormation();
+                delete Formations(this.id);
+                outputCard.body.push("Formation Destroyed!");
             }
         }
 
-        RemoveFormation() {
 
 
 
 
-
-        }
 
 
 
