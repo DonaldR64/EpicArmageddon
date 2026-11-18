@@ -5,10 +5,13 @@ const EA = (() => {
     const pageInfo = {};
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
 
+    const FormationMarkers = []
+
+
+
     let Units = {};
     let Formations = {};
     let HexMap = {}; 
-    let UnitIDList = []; //used in create formation
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -105,9 +108,6 @@ const EA = (() => {
             "borderColour": "#000000",
             "borderStyle": "5px groove",
             "strategy": 2,
-            "formationMarkers": ["letters_and_numbers0201::5982320","letters_and_numbers0202::5982321","letters_and_numbers0203::5982322","letters_and_numbers0204::5982323","letters_and_numbers0205::5982324","letters_and_numbers0206::5982325","letters_and_numbers0207::5982326","letters_and_numbers0208::5982327","letters_and_numbers0209::5982328","letters_and_numbers0210::5982329","letters_and_numbers0211::5982330","letters_and_numbers0212::5982331","letters_and_numbers0213::5982332","letters_and_numbers0214::5982333","letters_and_numbers0215::5982334","letters_and_numbers0216::5982335","letters_and_numbers0217::5982236","letters_and_numbers0218::5982237","letters_and_numbers0219::5982238","letters_and_numbers0220::5982339"],
-
-
 
         },
         "Collegia Titanica": {
@@ -119,7 +119,7 @@ const EA = (() => {
             "borderColour": "#BDB76B",
             "borderStyle": "5px groove",
             "strategy": 3,
-            "formationMarkers": ["letters_and_numbers0101::5982220","letters_and_numbers0102::5982221","letters_and_numbers0103::5982222","letters_and_numbers0104::5982223","letters_and_numbers0105::5982224","letters_and_numbers0106::5982225","letters_and_numbers0107::5982226","letters_and_numbers0108::5982227","letters_and_numbers0109::5982228","letters_and_numbers0110::5982229","letters_and_numbers0111::5982230","letters_and_numbers0112::5982231","letters_and_numbers0113::5982232","letters_and_numbers0114::5982233","letters_and_numbers0115::5982234","letters_and_numbers0116::5982235","letters_and_numbers0117::5982236","letters_and_numbers0118::5982237","letters_and_numbers0119::5982238","letters_and_numbers0120::5982239"],
+
         },
         "Blood Pact": {
             "image": "https://files.d20.io/images/507708996/EoMDSLLUFPULZ_dp--6xCg/thumb.png?1794882888",
@@ -130,7 +130,7 @@ const EA = (() => {
             "borderColour": "#000000",
             "borderStyle": "5px groove",
             "strategy": 1,
-            "formationMarkers": ["letters_and_numbers0001::5982118","letters_and_numbers0002::5982119","letters_and_numbers0003::5982120","letters_and_numbers0004::5982121","letters_and_numbers0005::5982122","letters_and_numbers0006::5982123","letters_and_numbers0007::5982125","letters_and_numbers0008::5982126","letters_and_numbers0009::5982127","letters_and_numbers0010::5982128","letters_and_numbers0011::5982129","letters_and_numbers0012::5982130","letters_and_numbers0013::5982131","letters_and_numbers0014::5982132","letters_and_numbers0015::5982133","letters_and_numbers0016::5982134","letters_and_numbers0017::5982135","letters_and_numbers0018::5982136","letters_and_numbers0019::5982137","letters_and_numbers0020::5982138"],
+
         },
 
 
@@ -654,7 +654,7 @@ const EA = (() => {
             this.dc = parseInt(dc.replace(/[^\d]/g,""));
 
             let shields = Element(this.special,"Void Shields") || "0";
-            this.shields = parseInt(dc.replace(/[^\d]/g,""));
+            this.shields = parseInt(shields.replace(/[^\d]/g,""));
             
 
 
@@ -729,15 +729,16 @@ log(weapons)
 
         MakeLeader() {
             let formation = Formations[this.formationID];
-    log(formation)
-    return
             let aura = formation.activated === false ? "#00ff00":"#000000";
             this.token.set({
                 aura1_color: aura,
                 aura1_opacity: 1,
+                aura1_radius: 0.25,
                 bar3_value: formation.blastMarkers,
-                showplayers_bar1: true,
+                bar3_max: formation.health,
+                showplayers_bar3: true,
             })
+            formation.leaderID = this.id;
         }
 
 
@@ -761,15 +762,21 @@ log(weapons)
 
             log(this)
         }
-        AddUnit(id) {
+        AddUnit(id,leader = false) {
             if (this.unitIDs.includes(id) === false) {
-                this.unitIDs.push(id);
+                if (leader === false) {
+                    this.unitIDs.push(id);
+                } else {
+                    this.unitIDs.unshift(id);
+                }
+                this.health += Units[id].dc;
             }
         }
         RemoveUnit(id) {
             let index = this.unitIDs.indexOf(id);
             if (index > -1) {
                 this.unitIDs.splice(index,1);
+///??? health 
             }
             if (this.leaderID === id && this.unitIDs.length > 0) {
                 this.leaderID = this.unitIDs[0];
@@ -1431,11 +1438,14 @@ log(weapons)
                 showplayers_aura1: true,
                 showplayers_aura2: true,
                 showname: true,
-                bar1_value: 0,
+                bar1_value: "",
+                bar1_max: "",
                 showplayers_bar1: false,
-                bar2_value: 0,
+                bar2_value: "",
+                bar2_max: "",
                 showplayers_bar2: false, 
-                bar3_value: 0,
+                bar3_value: "",
+                bar3_max: "",
                 showplayers_bar3: false, 
                 gmnotes: "",
                 statusmarkers: "",
@@ -1823,9 +1833,7 @@ log(weapons)
         let formationID = stringGen();
         let formation = new Formation(formationID);
         let player = parseInt(msg.content.split(";")[1]);    
-        let health = 0;
         let nameList = {};
-        let unitIDs = [];
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
@@ -1841,12 +1849,12 @@ log(weapons)
                 }
             }
             unit.token.set("name",name);
-            health += unit.dc;
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
             let formNum = state.EA.formations[player];
-            let formMarker = Factions[unit.faction].formationMarkers[formNum];
+            let formMarker = FormationMarkers[formNum];
             unit.token.set("status_" + formMarker,true);
+            unit.token.set("disableSnapping",false);
             if (unit.dc > 1) {
                 unit.token.set({
                     bar1_value: unit.dc,
@@ -1863,16 +1871,15 @@ log(weapons)
             }
             if (unit.special.includes("Character")) {
                 unit.token.set(SM.redflag,true);
-                unitIDs.unshift(id);
+                formation.AddUnit(id,true);
             } else {
-                unitIDs.push(id);
+                formation.AddUnit(id);
             }
 
-            formation.AddUnit(id);
             //AddAbilities(unit);
         })
 
-        Units[unitIDs[0]].MakeLeader();
+        Units[formation.unitIDs[0]].MakeLeader();
         
         _.each(nameList,info => {
             if (info.units > 1) {
@@ -1884,11 +1891,11 @@ log(weapons)
         })
 
         state.EA.formationInfo[formationID] = {
-            unitIDs: unitIDs,
-            startingHealth: health,
+            unitIDs: formation.unitIDs,
+            startingHealth: formation.health,
         }
         state.EA.formations[player]++;
-        let faction = Units[unitIDs[0]].faction;
+        let faction = Units[formation.unitIDs[0]].faction;
         if (state.EA.factions[player].includes(faction) === false) {
             state.EA.factions[player].push(faction);
             if (state.EA.factions[player].length === 1) {
