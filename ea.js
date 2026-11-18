@@ -751,7 +751,6 @@ log(weapons)
             this.id = id;
             this.unitIDs = [];
             this.leaderID = "";
-            this.blastMarkers = 0;
             this.activated = false;
             this.health = 0;
             this.startingHealth = 0;
@@ -766,6 +765,7 @@ log(weapons)
                     this.unitIDs.push(id);
                 } else {
                     this.unitIDs.unshift(id);
+                    this.leaderID = id;
                 }
                 this.health += Units[id].dc;
             }
@@ -774,7 +774,8 @@ log(weapons)
             let index = this.unitIDs.indexOf(id);
             if (index > -1) {
                 this.unitIDs.splice(index,1);
-///??? health 
+                let dc = parseInt(Units[id].token.get("bar1_value")) || 1;
+                this.health -= dc;
             }
             if (this.leaderID === id && this.unitIDs.length > 0) {
                 this.leaderID = this.unitIDs[0];
@@ -1337,16 +1338,22 @@ log(weapons)
    
         let s = 0;
         tokens.forEach((token) => {
-            let character = getObj("character", token.get("represents"));
-            let unitInfo = state.EA.unitInfo[token.id];
-            if (character && unitInfo) {
-                let unit = new Unit(token.get("id"));
-                s++;
+            let formationID = state.EA.unitInfo[token.id];
+            if (formationID) {
+                let formation = Formations[formationID];
+                if (!formation) {
+                    formation = new Formation(formationID);
+                    formation.startingHealth = state.EA.formationInfo[formationID].startingHealth;
+                }
+                let unit = new Unit(token.id);
+                let leader = unit.token.get("bar3_max") > 0 ? true:false;
+                formation.AddUnit(token.id,leader);
+                s++
             }
         });
 
 
-        log(s + " Units added to Array");
+        log(s + " Units added to Arrays");
     }
 
 
@@ -1860,7 +1867,6 @@ log(weapons)
             unit.token.set("name",name);
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
-            let formNum = state.EA.formations[player];
             unit.token.set("status_" + marker,true);
             unit.token.set("disableSnapping",false);
             if (unit.dc > 1) {
@@ -1902,7 +1908,6 @@ log(weapons)
         })
 
         state.EA.formationInfo[formationID] = {
-            unitIDs: formation.unitIDs,
             startingHealth: formation.health,
             marker: marker,
         }
