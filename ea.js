@@ -694,8 +694,7 @@ const EA = (() => {
             }
 
             this.weapons = weapons;
-log(this.special)
-log(weapons)
+
             this.name = token.get("name");
             this.id = id;
             this.charName = attributes.displayname;
@@ -809,7 +808,7 @@ log(weapons)
             return true;
         }
 
-        
+
 
 
 
@@ -1482,7 +1481,7 @@ log(weapons)
         state.EA = {
             turn: 0,
             playerIDs: ["",""], //set once a player activates their first formation in game
-            phase: "Initiative",
+            phase: "End",
             formationInfo: {}, //ref by formation ID, list of tokenIDs in formation
             unitInfo: {}, //ref by token ID, is the formationID of that token
             passengerID: {}, //ref by tokenID for the transport is the ID of the passenger
@@ -1592,11 +1591,47 @@ log(weapons)
         }
     }
 
+    const NextPhase = () => {
+        let turn = state.EA.turn;
+        let phase = state.EA.phase;
 
-    const Naming = (token) => {
+        if (turn === 0) {
+            //start of game things
+
+
+        }
+        let phases = ["Strategy","Action","End"];
+        let index = (phases.indexOf(phase) + 1);
+        if (index > 2) {
+            index = 0
+            state.EA.turn++;
+        };
+        phase = phases[index];
+        state.EA.phase = phase;
+        switch(phase) {
+            case 'Strategy':
+                StrategyPhase();
+                break;
+            case 'Action':
+                ActionPhase();
+                break;
+            case 'Strategy':
+                EndPhase();
+                break;
+        }
+    }
+
+    StrategyPhase = () => {
+        
+
+
+
+
+
 
 
     }
+
 
 
 
@@ -2925,6 +2960,11 @@ log("Checking " + unit.name);
             case '!CreateFormation':
                 CreateFormation(msg);
                 break;
+            case '!NextPhase':
+                NextPhase();
+                break;
+
+
 
 
         }
