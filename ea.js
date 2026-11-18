@@ -6,6 +6,7 @@ const EA = (() => {
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
 
     let Units = {};
+    let Formations = {};
     let HexMap = {}; 
     let UnitIDList = []; //used in create formation
 
@@ -78,7 +79,7 @@ const EA = (() => {
 
 
     const SM = {
-
+        redflag: "status_Red_Flag::5610550",
 
     }; 
 
@@ -649,6 +650,14 @@ const EA = (() => {
             this.special = [].concat(s0,s1,s2);
             this.critical = attributes.criticalhit;
 
+            let dc = Element(this.special,"Damage Capacity") || "1";
+            this.dc = parseInt(dc.replace(/[^\d]/g,""));
+
+            let shields = Element(this.special,"Void Shields") || "0";
+            this.shields = parseInt(dc.replace(/[^\d]/g,""));
+            
+
+
             this.height = (this.special.includes("Towering")) ? 2:1;
 
             let weapons = [];
@@ -718,7 +727,16 @@ log(weapons)
             return HexMap[this.hexLabel].Distance(HexMap[b.hexLabel]);
         }
 
-
+        MakeLeader() {
+            let formation = Formations[this.formationID];
+            let aura = formation.activated === false ? "#00ff00":"#000000";
+            this.token.set({
+                aura1_color: aura,
+                aura1_opacity: 1,
+                bar3_value: formation.blastMarkers,
+                showplayers_bar1: true,
+            })
+        }
 
 
 
@@ -726,6 +744,55 @@ log(weapons)
 
 
     }
+
+    class Formation {
+        constructor(id) {
+            this.id = id;
+            this.unitIDs = [];
+            this.leaderID = "";
+            this.blastMarkers = 0;
+            this.activated = false;
+            this.health = 0;
+            this.startingHealth = 0;
+        }
+        addUnit(id) {
+            if (this.unitIDs.includes(id) === false) {
+                this.unitIDs.push(id);
+
+
+
+
+            }
+        }
+        removeUnit(id) {
+            let index = this.unitIDs.indexOf(id);
+            if (index > -1) {
+                this.unitIDs.splice(index,1);
+            }
+            if (this.leaderID === id && this.unitIDs.length > 0) {
+                this.leaderID = this.unitIDs[0];
+                Units[this.unitIDs[0]].MakeLeader();
+            }
+        }
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     const DefineMap = () => {
@@ -1345,10 +1412,17 @@ log(weapons)
                 tint_color: "transparent",
                 aura1_color: "transparent",
                 aura1_radius: 0,
+                aura2_color: "transparent",
+                aura2_radius: 0,
                 showplayers_aura1: true,
+                showplayers_aura2: true,
                 showname: true,
-                disableSnapping: true,
-                disableTokenMenu: true,
+                bar1_value: 0,
+                showplayers_bar1: false,
+                bar2_value: 0,
+                showplayers_bar2: false, 
+                bar3_value: 0,
+                showplayers_bar3: false, 
                 gmnotes: "",
                 statusmarkers: "",
                 tooltip: "",
@@ -1733,8 +1807,8 @@ log(weapons)
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
         let formationID = stringGen();
+        let formation = new Formation(formationID);
         let player = parseInt(msg.content.split(";")[1]);    
-        let unitIDs = []; 
         let health = 0;
         let nameList = {};
         _.each(msg.selected,selected => {
@@ -1753,16 +1827,38 @@ log(weapons)
                 }
             }
             unit.token.set("name",name);
-            let dc = Element(unit.special,"Damage Capacity") || "1";
-            health += parseInt(dc.replace(/[^\d]/g,""));
+            health += unit.dc;
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
             let formNum = state.EA.formations[player];
             let formMarker = Factions[unit.faction].formationMarkers[formNum];
-log(formMarker)
             unit.token.set("status_" + formMarker,true);
+            if (unit.dc > 1) {
+                unit.token.set({
+                    bar1_value: unit.dc,
+                    bar1_max: unit.dc,
+                    showplayers_bar1: true,
+                });
+            }
+            if (unit.shields > 0) {
+                unit.token.set({
+                    bar2_value: unit.shields,
+                    bar2_max: unit.shields,
+                    showplayers_bar2: true,
+                })
+            }
+            if (unit.special.includes("Character")) {
+                unit.token.set(SM.redflag,true);
+                unitIDs.unshift(id);
+            } else {
+                unitIDs.push(id);
+            }
+
+            formation.addUnit(id);
             //AddAbilities(unit);
         })
+
+        Units[unitIDs[0]].MakeLeader();
         
         _.each(nameList,info => {
             if (info.units > 1) {
@@ -1773,7 +1869,7 @@ log(formMarker)
             }
         })
 
-        state.EA.formationInfo = {
+        state.EA.formationInfo[formationID] = {
             unitIDs: unitIDs,
             startingHealth: health,
         }
