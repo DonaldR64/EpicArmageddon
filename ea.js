@@ -5,9 +5,7 @@ const EA = (() => {
     const pageInfo = {};
     const rowLabels = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI"];
 
-    const FormationMarkers = []
-
-
+    const FormationMarkers = ["Plus-1d4::2006401","Minus-1d4::2006429","Plus-1d6::2006402","Minus-1d6::2006434","A::6001458","B::6001459","C::6001460","D::6001461","E::6001462","F::6001463","G::6001464","H::6001465","I::6001466","J::6001467","L::6001468","M::6001469","O::6001471","P::6001472","Q::6001473","R::6001474","S::6001475"];
 
     let Units = {};
     let Formations = {};
@@ -1465,6 +1463,7 @@ log(weapons)
            
             factions: [[],[]],
             formations: [0,0],
+            formationMarkers: [[],[]],
             strategy: [0,0],
         }
     
@@ -1834,6 +1833,16 @@ log(weapons)
         let formation = new Formation(formationID);
         let player = parseInt(msg.content.split(";")[1]);    
         let nameList = {};
+        if (state.EA.formations[player] === 0) {
+            let fm = [...FormationMarkers];
+            for (let i = fm.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [fm[i], fm[j]] = [fm[j], fm[i]];
+            }            
+            state.EA.formationMarkers[player] = fm;
+        }
+        let marker = state.EA.formationMarkers[player][state.EA.formations[player]];
+
         _.each(msg.selected,selected => {
             let id = selected._id;
             let unit = new Unit(id);
@@ -1852,8 +1861,7 @@ log(weapons)
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
             let formNum = state.EA.formations[player];
-            let formMarker = FormationMarkers[formNum];
-            unit.token.set("status_" + formMarker,true);
+            unit.token.set("status_" + marker,true);
             unit.token.set("disableSnapping",false);
             if (unit.dc > 1) {
                 unit.token.set({
@@ -1893,6 +1901,7 @@ log(weapons)
         state.EA.formationInfo[formationID] = {
             unitIDs: formation.unitIDs,
             startingHealth: formation.health,
+            marker: marker,
         }
         state.EA.formations[player]++;
         let faction = Units[formation.unitIDs[0]].faction;
