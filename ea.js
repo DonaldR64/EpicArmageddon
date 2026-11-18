@@ -754,7 +754,7 @@ log(weapons)
             this.activated = false;
             this.health = 0;
             this.startingHealth = 0;
-
+            this.blastMarkers = 0;
             Formations[id] = this;
 
             log(this)
@@ -1348,6 +1348,9 @@ log(weapons)
                 let unit = new Unit(token.id);
                 let leader = unit.token.get("bar3_max") > 0 ? true:false;
                 formation.AddUnit(token.id,leader);
+                if (leader === true) {
+                    formation.blastMarkers = parseInt(unit.token.get("bar3_value")) || 0;
+                }
                 s++
             }
         });
@@ -2884,6 +2887,8 @@ log("Checking " + unit.name);
                 log(pageInfo);
                 log("STATE");
                 log(state.EA);
+                log("Formations");
+                log(Formations);
                 break;
             case '!ClearState':
                 ClearState(msg);
