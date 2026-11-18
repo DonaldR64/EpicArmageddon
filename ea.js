@@ -1759,6 +1759,7 @@ log(weapons)
             unit.formationID = formationID;
             let formNum = state.EA.formations[player];
             let formMarker = Factions[unit.faction].formationMarkers[formNum];
+log(formMarker)
             unit.token.set("status_" + formMarker,true);
             //AddAbilities(unit);
         })
