@@ -10,7 +10,7 @@ const EA = (() => {
     let Units = {};
     let Formations = {};
     let HexMap = {}; 
-    let strategyFlag = false;
+    let strategyFlag = [false,false];
 
 
     let HexSize, HexInfo, DIRECTIONS;
@@ -94,10 +94,9 @@ const EA = (() => {
             "dice": "Neutral",
             "backgroundColour": "#FFFFFF",
             "titlefont": "Arial",
-            "fontColour": "#000000",
-            "borderColour": "#00FF00",
+            "fontColour": "#0000ff",
+            "borderColour": "#0000ff",
             "borderStyle": "5px ridge",
-            "objColour": "#ffffff",
         },
         "Steel Legion": {
             "image": "https://files.d20.io/images/507708546/a0F5xh9Owh6LEjEGiGmeCA/thumb.png?1794882489",
@@ -1582,14 +1581,14 @@ const EA = (() => {
                 }
             }
         } else {
-            player = state.EA.playerIDs.indexOf(playerID) || 2;
-            if (player === 2) {
+            player = state.EA.playerIDs.indexOf(playerID);
+            if (player === -1) {
                 sendChat("","Click on one of your Units then select Roll again");
                 return;
             }
         }
         let faction = state.EA.factions[player][0] || "Neutral";
-        if (strategyFlag === true) {
+        if (strategyFlag[player] === true) {
             SetupCard("Strategy Roll","",faction);
             outputCard.body.push(DisplayDice(roll,Factions[faction].dice,40));
             let strat = Factions[faction].strategy;
@@ -1597,6 +1596,7 @@ const EA = (() => {
             outputCard.body.push("Strategy Rating: " + strat);
             outputCard.body.push("Result: " + result);
             PrintCard();
+            strategyFlag[player] = false;
         } else {
             let res = "/direct " + DisplayDice(roll,Factions[faction].dice,40);
             sendChat("player|" + playerID,res);
@@ -1639,10 +1639,18 @@ const EA = (() => {
         outputCard.body.push("Their Armies Strategy Rating will be added");
         outputCard.body.push("Highest Result Chooses who goes first");
         PrintCard();
-        let strategyFlag = true;
+        strategyFlag = [true,true];
     }
 
+    ActionPhase = () => {
+        SetupCard("Turn " + state.EA.turn,"Action Phase","Neutral");
 
+
+
+
+
+
+    }
 
 
 
@@ -1984,7 +1992,6 @@ const EA = (() => {
                 state.EA.strategy[player] = Factions[faction].strategy;
             }
         }
-        PrintCard();
     }
 
 
