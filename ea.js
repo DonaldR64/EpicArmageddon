@@ -106,6 +106,7 @@ const EA = (() => {
             "fontColour": "#000000",
             "borderColour": "#000000",
             "borderStyle": "5px groove",
+            "strategy": 2,
         },
         "Collegia Titanica": {
             "image": "https://files.d20.io/images/507708819/hms3sPkiv0gTPDdmge7UaA/thumb.png?1794882695",
@@ -115,6 +116,7 @@ const EA = (() => {
             "fontColour": "#000000",
             "borderColour": "#BDB76B",
             "borderStyle": "5px groove",
+            "strategy": 3,
         },
         "Blood Pact": {
             "image": "https://files.d20.io/images/507708996/EoMDSLLUFPULZ_dp--6xCg/thumb.png?1794882888",
@@ -124,6 +126,7 @@ const EA = (() => {
             "fontColour": "#000000",
             "borderColour": "#000000",
             "borderStyle": "5px groove",
+            "strategy": 1,
         },
 
 
@@ -1361,7 +1364,7 @@ log(weapons)
            
             factions: [[],[]],
             formations: [0,0],
-
+            strategy: [0,0],
         }
     
 
@@ -1766,7 +1769,6 @@ log(weapons)
             }
         })
 
-
         state.EA.formationInfo = {
             unitIDs: unitIDs,
             startingHealth: health,
@@ -1775,6 +1777,9 @@ log(weapons)
         let faction = Units[unitIDs[0]].faction;
         if (state.EA.factions[player].includes(faction) === false) {
             state.EA.factions[player].push(faction);
+            if (state.EA.factions[player].length === 1) {
+                state.EA.strategy[player] = Factions[faction].strategy;
+            }
         }
         PrintCard();
     }
