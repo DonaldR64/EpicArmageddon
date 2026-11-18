@@ -1757,9 +1757,9 @@ log(weapons)
             health += parseInt(dc.replace(/[^\d]/g,""));
             state.EA.unitInfo[id] = formationID;
             unit.formationID = formationID;
-            //let formNum = state.EA.formations[player];
-            //let formMarker = formationMarkers[formNum];
-            //unit.token.set("status_" + formMarker,true);
+            let formNum = state.EA.formations[player];
+            let formMarker = Factions[unit.faction].formationMarkers[formNum];
+            unit.token.set("status_" + formMarker,true);
             //AddAbilities(unit);
         })
         
