@@ -1811,9 +1811,9 @@ log(weapons)
         let player = parseInt(msg.content.split(";")[1]);    
         let health = 0;
         let nameList = {};
+        let unitIDs = [];
         _.each(msg.selected,selected => {
             let id = selected._id;
-            unitIDs.push(id);
             let unit = new Unit(id);
             unit.player = player;
             let name = unit.charName;
