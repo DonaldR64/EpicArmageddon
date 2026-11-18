@@ -1648,11 +1648,16 @@ const EA = (() => {
 
     EndPhase = () => {
         SetupCard("Turn " + state.EA.turn,"End Phase","Neutral");
-
-
-
-
-
+        let higherStrat = state.EA.strategy[0] > state.EA.strategy[1] ? 0:1;
+        if (state.EA.strategy[0] === state.EA.strategy[1]) {
+            higherStrat = randomInteger(2) - 1;
+        }
+        let hsFaction = state.EA.factions[higherStrat][0];
+        outputCard.body.push("Aircraft Make Disengagement Moves");
+//Resolve critical hit and other end of turn effects (alternate)
+        outputCard.body.push("Rally any Broken Formations");
+        outputCard.body.push("Remove any Daemons");
+        outputCard.body.push("Check Victory Conditions");
         PrintCard();
     }
 
