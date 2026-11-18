@@ -788,9 +788,28 @@ log(weapons)
         }
 
 
+        Coherency() {
+            if (this.unitIDs.length === 1) {
+                return true;
+            }
+            for (let k=0;k<this.unitIDs.length;k++) {
+                let unit1 = Units[this.unitIDs[k]];
+                if (unit1) {
+                    for (let i=0;i<this.unitIDs.length;i++) {
+                        let unit2 = this.unitIDs[i];
+                        if (unit2 && unit1.id !== unit2.id) {
+                            let dist = unit1.Distance(unit2);
+                            if (dist > 2) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
 
-
-
+        
 
 
 
