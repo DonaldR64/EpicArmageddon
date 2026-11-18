@@ -2698,7 +2698,7 @@ log("Checking " + unit.name);
             let newHex = HexMap[newLabel];
             let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
-            MoveHex(unit,prevHex,newHex);
+
         }
         if ((tok.get("height") !== prev.height || tok.get("width") !== prev.width) && state.EA.turn !== 0) {
             tok.set({
