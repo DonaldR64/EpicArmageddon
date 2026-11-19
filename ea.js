@@ -11,7 +11,9 @@ const EA = (() => {
     let Formations = {};
     let HexMap = {}; 
     let strategyFlag = [false,false];
-    let lastFaction = [];
+    let Craftworlds = ["Biel-Tan","Ulthwe","Iyanden","Saim-Hann","Exodites"];
+
+
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -727,7 +729,7 @@ const EA = (() => {
 
         MakeLeader() {
             let formation = Formations[this.formationID];
-            let aura = formation.activated === false ? "#00ff00":"#000000";
+            let aura = formation.action === "" ? "#00ff00":(formation.action === "Overwatch") ? "#ff00ff":"#000000";
             this.token.set({
                 aura1_color: aura,
                 aura1_opacity: 1,
@@ -739,22 +741,49 @@ const EA = (() => {
             formation.leaderID = this.id;
         }
 
+        Destroy() {
+            this.token.set("status_dead",true);
+            this.token.set("layer","map");
+            Formations[this.formationID].RemoveUnit(this.id);
+            delete Units[this.id];
+        }
 
 
+        Broken() {
+            let broken = this.token.get("tint_color") === "#ff0000" ? true:false;
+            return broken;
+        }
+
+        Break() {
+            this.token.set("tint_color","#ff0000");            
+        }
+
+        AddBM(markers) {
+            let bm = parseInt(this.token.get("bar3_value"));
+            let max = parseInt(this.token.get("bar3_max"));
+            bm += markers;
+            if (bm >= max) {
+                Formations[this.formationID].Break();
+            } else {
+                this.token.set("bar3_value",bm);
+            }
+        }
 
 
 
     }
 
     class Formation {
-        constructor(id) {
+        constructor(id,player = 2) {
             this.id = id;
+            this.player = player;
             this.unitIDs = [];
             this.leaderID = "";
-            this.activated = false;
             this.health = 0;
             this.startingHealth = 0;
             this.blastMarkers = 0;
+            this.farsight = false;
+            this.action = "";
             Formations[id] = this;
 
             log(this)
@@ -773,9 +802,20 @@ const EA = (() => {
         RemoveUnit(id) {
             let index = this.unitIDs.indexOf(id);
             if (index > -1) {
+                let unit = Units[id];
                 this.unitIDs.splice(index,1);
-                let dc = parseInt(Units[id].token.get("bar1_value")) || 1;
-                this.health -= dc;
+                let dc = parseInt(unit.token.get("bar1_value")) || 1;
+                this.health -= dc;  
+                if (unit.special.includes("Farsight")) {
+                    let fs = false;
+                    for (let k=0;k<this.unitIDs.length;k++) {
+                        if (Units[this.unitIDs[k]].special.includes("Farsight")) {
+                            fs = true;
+                            break;
+                        }
+                    }
+                    this.farsight = fs;
+                }
             }
             if (this.leaderID === id && this.unitIDs.length > 0) {
                 this.leaderID = this.unitIDs[0];
@@ -809,9 +849,23 @@ const EA = (() => {
             return true;
         }
 
+        Break() {
+            _.each(this.unitIDs, unitID => {
+                let unit = Units[unitID];
+                if (unit) {
+                    unit.Break();
+                } else {
+                    this.RemoveUnit(unitID);
+                }
+            })
+            Units[this.leaderID].token.set("bar3_value",0);
+        }
 
-
-
+        SetOverwatch(over) {
+            let leaderUnit = Units[this.leaderID];
+            let aura = (over === true) ? "#ff00ff":"#000000";
+            leaderUnit.token.set("aura1_color",aura);
+        }
 
 
 
@@ -1359,8 +1413,10 @@ const EA = (() => {
             if (formationID) {
                 let formation = Formations[formationID];
                 if (!formation) {
+                    let info = state.EA.formationInfo[formationID];
                     formation = new Formation(formationID);
-                    formation.startingHealth = state.EA.formationInfo[formationID].startingHealth;
+                    formation.startingHealth = info.startingHealth;
+                    formation.player = info.player;
                 }
                 let unit = new Unit(token.id);
                 let leader = unit.token.get("bar3_max") > 0 ? true:false;
@@ -1492,6 +1548,7 @@ const EA = (() => {
             formations: [0,0],
             formationMarkers: [[],[]],
             strategy: [0,0],
+            activations: [],
         }
     
 
@@ -1647,6 +1704,13 @@ const EA = (() => {
         outputCard.body.push("Or a Reroll if Turn 1");
         PrintCard();
         strategyFlag = [true,true];
+
+        _.each(Formations,formation => {
+            formation.action = "";
+
+        })
+
+
     }
 
     EndPhase = () => {
@@ -1669,11 +1733,120 @@ const EA = (() => {
         let Tag = msg.content.split(";");
         let unit = Units[Tag[1]];
         let formation = Formations[unit.formationID];
+        let leaderUnit = Units[formation.leaderID];
         let action = Tag[2];
 
+        let errorMsg = [];
+
+        let retained = false;
+        let doubleRetain = false;
+        if (leaderUnit.player === state.EA.activations[state.EA.activations.length - 1]) {  
+            retained = true;
+            if (leaderUnit.player === state.EA.activations[state.EA.activations.length - 2]) {
+                if (Craftworlds.includes(leaderUnit.faction)) {
+                    _.each(Formations,formation => {
+                        if (formation.player === leaderUnit.player && formation.farsight === true) {
+                            doubleRetain = true;
+                        }
+                    })
+                } 
+                if (doubleRetain === false) {
+                    errorMsg.push("Cannot Activate 3x in a row");
+                }
+            }
+        } 
+
+        let initiative = leaderUnit.init;
+        let blastMarkers = parseInt(leaderUnit.token.get("bar3_value"));
+
+        let target = initiative;
+        let tip = "Initiative: " + initiative + "+";
+        if (blastMarkers > 0) {
+            tip += "<br>Blast Markers -1";
+            target++;
+        }
+        if ((retained === true && formation.farsight === false) || doubleRetain === true) {
+            tip += "<br>Retained Initiative -1";
+            target++;
+        }
+
+        let coherency = formation.Coherency();
+
+        if ((action === "Sustained Fire" || action === "Overwatch") && coherency === false) {
+            errorMsg.push("Formation not in Coherency, cannot take a " + action + " action");
+        }
+
+        if (leaderUnit.Broken()) {
+            errorMsg.push("Formation is Broken and Cannot Activate");
+        }
 
 
+        SetupCard("Activate",action,leaderUnit.faction);
+        if (errorMsg.length > 0) {
+            _.each(errorMsg,msg => {
+                outputCard.body.push(msg);
+            })
+            PrintCard();
+            return;
+        }
 
+        let roll = randomInteger(6);
+
+        outputCard.body.push(DisplayDice(roll,Factions[faction].dice,32) + " vs. " + target + "+");
+
+        if (roll >= target) {
+            if (action === "Advance") {
+                outputCard.body.push("The Formation may make one Move and then Shoot");
+            }
+            if (action === "Engage") {
+                outputCard.body.push("The Formation may make a Charge Move then Fight an Assault");
+            }
+            if (action === "Double") {
+                outputCard.body.push("The Formation may make two Moves and then Shoot with a -1 modifier");
+            }
+            if (action === "March") {
+                outputCard.body.push("The Formation make make 3 Moves");
+            }
+            if (action === "Marshal") {
+                outputCard.body.push("The Formation may either Shoot with a -1 Modifier then Regroup or Move then Regroup")
+            }
+            if (action === "Overwatch") {
+                outputCard.body.push("The Formation may not Move and Enters Overwatch");
+            }
+            if (action === "Sustained Fire") {
+                outputCard.body.push("The Formation may not turn or Move, but can Shoot with a +1 modifier");
+            }
+        } else {
+            outputCard.body.push("Failure. The Unit takes a Blast Marker");
+            leaderUnit.AddBM(1);
+            action = "Hold";
+            if (leaderUnit.Broken()) {
+                outputCard.body.push("The Formation Breaks");
+                outputCard.body.push("It may make a Withdrawal Move");
+            } else {
+                outputCard.body.push("The Unit must take a Hold Action");
+                if (coherency === false) {
+                    outputCard.body.push("As it is out of Coherency it must make a single Move and get into Coherency");
+                } else {
+                    outputCard.body.push("The Unit may Move, Fire or Regroup");
+                }
+            }
+        }
+        formation.action = action;
+
+        if (action !== "Overwatch") {
+            formation.Activated();
+        } else {
+            formation.SetOverwatch(true);
+        }
+
+        if (retained === false) {
+            state.EA.activations = [player];
+        } else {
+            state.EA.activations.push(player);
+        }
+
+        PrintCard();
 
     }
 
@@ -1938,8 +2111,8 @@ const EA = (() => {
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
         let formationID = stringGen();
-        let formation = new Formation(formationID);
         let player = parseInt(msg.content.split(";")[1]);    
+        let formation = new Formation(formationID,player);
         let nameList = {};
         if (state.EA.formations[player] === 0) {
             let fm = [...FormationMarkers];
@@ -2013,6 +2186,7 @@ const EA = (() => {
         state.EA.formationInfo[formationID] = {
             startingHealth: formation.health,
             marker: marker,
+            player: player,
         }
         state.EA.formations[player]++;
         let faction = Units[formation.unitIDs[0]].faction;
@@ -3012,6 +3186,9 @@ log("Checking " + unit.name);
                 break;
             case '!RollD6':
                 RollD6(msg);
+                break;
+            case '!Activate':
+                Activate(msg);
                 break;
 
 
