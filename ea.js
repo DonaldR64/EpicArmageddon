@@ -11,7 +11,7 @@ const EA = (() => {
     let Formations = {};
     let HexMap = {}; 
     let strategyFlag = [false,false];
-    let lastUnitID = "";
+    let lastFaction = [];
 
     let HexSize, HexInfo, DIRECTIONS;
 
@@ -1606,12 +1606,15 @@ const EA = (() => {
     const NextPhase = () => {
         let turn = state.EA.turn;
         let phase = state.EA.phase;
-
         if (turn === 0) {
             //start of game things
 
 
         }
+//maybe checks for things like rallies being done, all unbroken formations activated etc
+
+
+
         phase = (phase === "End") ? "Strategy":"End";
         if (phase === "Strategy") {
             state.EA.turn++;
@@ -1660,6 +1663,22 @@ const EA = (() => {
         outputCard.body.push("Check Victory Conditions");
         PrintCard();
     }
+
+
+    const Activate = (msg) => {
+        let Tag = msg.content.split(";");
+        let unit = Units[Tag[1]];
+        let formation = Formations[unit.formationID];
+        let action = Tag[2];
+
+
+
+
+
+    }
+
+
+
 
 
 
