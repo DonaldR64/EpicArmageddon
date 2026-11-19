@@ -724,7 +724,11 @@ const EA = (() => {
 
 
         Distance(b) {
-            return HexMap[this.hexLabel].Distance(HexMap[b.hexLabel]);
+            let distance = HexMap[this.hexLabel].Distance(HexMap[b.hexLabel]);
+            if (this.type === "War Engine") {
+                distance -= 1;
+            }
+            return distance;
         }
 
         MakeLeader() {
@@ -733,7 +737,7 @@ const EA = (() => {
             this.token.set({
                 aura1_color: aura,
                 aura1_opacity: 1,
-                aura1_radius: 0.25,
+                aura1_radius: 0.1,
                 bar3_value: formation.blastMarkers,
                 bar3_max: formation.health,
                 showplayers_bar3: true,
@@ -832,19 +836,22 @@ const EA = (() => {
             if (this.unitIDs.length === 1) {
                 return true;
             }
-            for (let k=0;k<this.unitIDs.length;k++) {
-                let unit1 = Units[this.unitIDs[k]];
-                if (unit1) {
-                    for (let i=0;i<this.unitIDs.length;i++) {
-                        let unit2 = this.unitIDs[i];
-                        if (unit2 && unit1.id !== unit2.id) {
-                            let dist = unit1.Distance(unit2);
-                            if (dist > 2) {
-                                return false;
-                            }
-                        }
+            let group = [this.leaderID];
+            cLoop1:
+            for (let i=0;i<this.unitIDs.length;i++) {
+                let id = this.unitIDs[i];
+                if (group.includes(id)) {continue}
+                let unit1 = Units[id];
+                for (let j=0;j<group.length;j++) {
+                    let unit2 = Units[group[j]];
+                    let dist = unit1.Distance(unit2);
+                    if (dist <= 3) {
+                        group.push(id);
+                        continue cLoop1;
                     }
                 }
+                //not in coherency
+                return false;
             }
             return true;
         }
@@ -866,6 +873,10 @@ const EA = (() => {
             let aura = (over === true) ? "#ff00ff":"#000000";
             leaderUnit.token.set("aura1_color",aura);
         }
+
+
+
+
 
 
 
@@ -1707,7 +1718,7 @@ const EA = (() => {
 
         _.each(Formations,formation => {
             formation.action = "";
-
+            Units[formation.leaderID].token.set("aura1_color","#00ff00");
         })
 
 
@@ -1751,6 +1762,11 @@ const EA = (() => {
             }
         } 
 
+        if (leaderUnit.token.get("aura1_color") === "#000000") {
+            errorMsg.push("Formation has activated this turn");
+        }
+
+
         let initiative = leaderUnit.init;
         let blastMarkers = parseInt(leaderUnit.token.get("bar3_value"));
 
@@ -1787,7 +1803,7 @@ const EA = (() => {
 
         let roll = randomInteger(6);
 
-        outputCard.body.push(DisplayDice(roll,Factions[faction].dice,32) + " vs. " + target + "+");
+        outputCard.body.push(DisplayDice(roll,Factions[leaderUnit.faction].dice,32) + " vs. " + target + "+");
 
         if (roll >= target) {
             if (action === "Advance") {
@@ -1811,6 +1827,9 @@ const EA = (() => {
             if (action === "Sustained Fire") {
                 outputCard.body.push("The Formation may not turn or Move, but can Shoot with a +1 modifier");
             }
+            if (coherency === false) {
+                outputCard.body.push("As part of its move, the Formation must move into Coherency");
+            }
         } else {
             outputCard.body.push("Failure. The Unit takes a Blast Marker");
             leaderUnit.AddBM(1);
@@ -1823,37 +1842,50 @@ const EA = (() => {
                 if (coherency === false) {
                     outputCard.body.push("As it is out of Coherency it must make a single Move and get into Coherency");
                 } else {
-                    outputCard.body.push("The Unit may Move, Fire or Regroup");
+                    outputCard.body.push("The Unit may do one of Move, Fire or Regroup");
                 }
             }
         }
         formation.action = action;
 
         if (action !== "Overwatch") {
-            formation.Activated();
+            leaderUnit.token.set("aura1_color","#000000");
         } else {
             formation.SetOverwatch(true);
         }
 
-        let remaining = false;
+        let remainingOpp = false;
+        let remainingOwn = false;
+        let oppPlayer = (leaderUnit.player === 0) ? 1:0;
+        let oppFaction = state.EA.factions[oppPlayer][0];
         _.each(Formations,formation2 => {
-            if (formation2.player !== formation.player && formation.action === "") {
-                remaining = true;
+            if (formation2.action === "" && Units[formation2.leaderID].Broken() === false) {
+                if (formation2.player === formation.player) {
+                    remainingOwn = true;
+                } else {
+                    remainingOpp = true;
+                }
             }
         })
 
-        if (remaining === false) {
-            let oppPlayer = (player === 0) ? 1:0;
-            let oppFaction = state.EA.factions[oppPlayer][0];
+        if (remainingOwn === false && remainingOpp === true) {
             outputCard.body.push("[hr]");
-            outputCard.body.push(oppFaction + " has no other Formations to Activate");
+            outputCard.body.push(leaderUnit.faction + " has no other Unbroken Formations to Activate");
+        } else if (remainingOpp === true) {
+            if (retained === false) {
+                state.EA.activations = [leaderUnit.player];
+            } else {
+                state.EA.activations.push(leaderUnit.player);
+            }
+        } else if (remainingOwn === true) {
+            outputCard.body.push("[hr]");
+            outputCard.body.push(oppFaction + " has no other Unbroken Formations to Activate");
             state.EA.activations = [];
         } else {
-            if (retained === false) {
-                state.EA.activations = [player];
-            } else {
-                state.EA.activations.push(player);
-            }
+            state.EA.activations = [];
+            outputCard.body.push("[hr]");
+            outputCard.body.push("Neither side has Unbroken Formations to Activate");
+            outputCard.body.push("Select Next Phase when ready");
         }
 
         PrintCard();
