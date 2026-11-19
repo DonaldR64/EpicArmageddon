@@ -1508,6 +1508,7 @@ const EA = (() => {
         //clear arrays
         HexMap = {}; 
         Units = {};
+        Formations = {};
         
         //clear token info
         let tokens = findObjs({
@@ -1720,7 +1721,7 @@ const EA = (() => {
             formation.action = "";
             Units[formation.leaderID].token.set("aura1_color","#00ff00");
         })
-
+        state.EA.activations = [];
 
     }
 
@@ -1871,6 +1872,7 @@ const EA = (() => {
         if (remainingOwn === false && remainingOpp === true) {
             outputCard.body.push("[hr]");
             outputCard.body.push(leaderUnit.faction + " has no other Unbroken Formations to Activate");
+            state.EA.activations = [];
         } else if (remainingOpp === true) {
             if (retained === false) {
                 state.EA.activations = [leaderUnit.player];
@@ -1886,6 +1888,7 @@ const EA = (() => {
             outputCard.body.push("[hr]");
             outputCard.body.push("Neither side has Unbroken Formations to Activate");
             outputCard.body.push("Select Next Phase when ready");
+            state.EA.activations = [];
         }
 
         PrintCard();
