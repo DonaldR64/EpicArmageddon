@@ -1840,10 +1840,25 @@ const EA = (() => {
             formation.SetOverwatch(true);
         }
 
-        if (retained === false) {
-            state.EA.activations = [player];
+        let remaining = false;
+        _.each(Formations,formation2 => {
+            if (formation2.player !== formation.player && formation.action === "") {
+                remaining = true;
+            }
+        })
+
+        if (remaining === false) {
+            let oppPlayer = (player === 0) ? 1:0;
+            let oppFaction = state.EA.factions[oppPlayer][0];
+            outputCard.body.push("[hr]");
+            outputCard.body.push(oppFaction + " has no other Formations to Activate");
+            state.EA.activations = [];
         } else {
-            state.EA.activations.push(player);
+            if (retained === false) {
+                state.EA.activations = [player];
+            } else {
+                state.EA.activations.push(player);
+            }
         }
 
         PrintCard();
