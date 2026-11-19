@@ -1804,7 +1804,10 @@ const EA = (() => {
 
         let roll = randomInteger(6);
 
-        outputCard.body.push(DisplayDice(roll,Factions[leaderUnit.faction].dice,32) + " vs. " + target + "+");
+        tip = '[' + target + '](#" class="showtip" title="' + tip + ')';
+
+
+        outputCard.body.push(DisplayDice(roll,Factions[leaderUnit.faction].dice,32) + " vs. " + tip + "+");
 
         if (roll >= target) {
             if (action === "Advance") {
