@@ -45,15 +45,11 @@ const LOS = (shooter,target) => {
         return result;
     }
 
+
+    let obscured = false; //obscured on either path means obscured
+
     for (let h=0;h<targetHexes.length;h++) {
         let targetHex = targetHexes[h];
-
-
-
-
-
-
-
 
         let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
@@ -64,12 +60,6 @@ const LOS = (shooter,target) => {
 
         let los = true;
         let blockLabel; //hex where LOS blocked
-        let obscured = false; //obscured on either path means obscured
-
-
-
-
-
         
         for (let i=0;i<len;i++) {
             let blocked = 0; //if blocked === 2 then blocked
