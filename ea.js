@@ -153,7 +153,7 @@ const EA = (() => {
             name: "Crops",
             terrainHeight: 0, 
             cover: {"Infantry": 6, "Vehicles": false}, 
-            move: {"Infantry": "Normal", "Vehicle": "Normal", "WarEngine": "Normal"},
+            move: {"Infantry": "Normal", "Vehicle": "Normal", "War Engine": "Normal"},
             los: "Crops",         
         },
 
@@ -168,14 +168,14 @@ const EA = (() => {
             name: "Woods",
             terrainHeight: 2, 
             cover: {"Infantry": 5, "Vehicle": false, "War Engine": false}, 
-            move: {"Infantry": "Normal", "Vehicle": "Dangerous", "WarEngine": "Dangerous"},
+            move: {"Infantry": "Normal", "Vehicle": "Dangerous", "War Engine": "Dangerous"},
             los: "Woods",         
         },
         "Building 1": {
             name: "Building 1",
             terrainHeight: 1, 
             cover: {"Infantry": 4, "Vehicles": false}, 
-            move: {"Infantry": "Normal", "Vehicle": "Impassable", "WarEngine": "Impassable"},
+            move: {"Infantry": "Normal", "Vehicle": "Impassable", "War Engine": "Impassable"},
             los: "Solid",         
         },
 
@@ -474,8 +474,7 @@ const EA = (() => {
             this.offboard = true;
             this.los = "Normal";
             this.cover = {"Infantry": false, "Vehicle": false},
-            this.move = {"Infantry": "Normal", "Vehicle": "Normal", "WarEngine": "Normal"},
-
+            this.move = {"Infantry": "Normal", "Vehicle": "Normal", "War Engine": "Normal"},
 
             HexMap[this.label] = this;
         }
@@ -1780,7 +1779,7 @@ log(target.name + ": " + target.hexLabel)
         } else if (target.type.includes("Vehicle")) {
             cover = targetHex.cover["Vehicle"];
         } else if (target.type.includes("War Engine")) {
-            cover = targetHex.cover["WarEngine"];
+            cover = targetHex.cover["War Engine"];
         }
 
         if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
@@ -2532,7 +2531,27 @@ log("Woods")
             let newHex = HexMap[newLabel];
             let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
+            let labels = [newLabel];
 
+            let illegal = false;
+            for (let i=0;i<labels.length;i++) {
+                let label = labels[i];
+                let hex = HexMap[label];
+                if ((hex.move["Infantry"] === "Impassable" && unit.type === "Infantry") || (hex.move["Vehicle"] === "Impassable" && unit.type.includes("Vehicle")) || (hex.move["War Engine"] === "Impassable" && unit.type === "War Engine")) {
+                    illegal = true;
+                    break;
+                }
+            }
+
+            if (illegal === true) {
+                PlaySound("Bap")
+                newHex = prevHex;                
+            }
+            tok.set({
+                left: newHex.centre.x,
+                top: newHex.centre.y,
+            })
+            unit.hexLabel = newHex.label;
         }
         if ((tok.get("height") !== prev.height || tok.get("width") !== prev.width) && state.EA.turn !== 0) {
             tok.set({
