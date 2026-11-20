@@ -1,0 +1,97 @@
+const LOS = (shooter,target) => {
+    let shooterHex = HexMap[shooter.hexLabel];
+    let targetHex = HexMap[target.hexLabel];
+    let distance = shooter.Distance(target);
+    let shooterHeight = shooter.height + shooterHex.level;
+    let targetHeight = target.height + targetHex.level;
+    let cover = false;
+    let obscured = false;
+
+    if (target.type === "Infantry") {
+        cover = targetHex.cover["Infantry"];
+    } else if (target.type.includes("Vehicle")) {
+        cover = targetHex.cover["Vehicle"];
+    } else if (target.type.includes("War Engine")) {
+        cover = targetHex.cover["WarEngine"];
+    }
+
+    if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
+        let result = {
+            distance: distance,
+            los: true,
+            losBlocked: "",
+            cover: cover,
+            obscured: false,
+        }
+        return result;
+    }
+
+    let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
+    let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
+    let len = interLabels[0].length;
+
+    let pt1 = new Point
+
+
+    for (let i=0;i<len;i++) {
+
+
+        for (let side=0;side<2;side++) {
+            let woods = 0;
+            let label = interLabels[side][i];
+            let interHex = HexMap[label];
+
+
+
+
+            if (shooterHeight === targetHeight) {
+                if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
+                    blocked++;
+                    blockLabel = label;
+                    continue;
+                } else if (interHex.los === "Woods") {
+                    woods++;
+                    if (woods > 1) {
+                        blocked++;
+                        blockLabel = label;
+                        continue;
+                    }
+                }
+            } else {
+                if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+                    blocked++;
+                    blockLabel = label;
+                    continue;
+                }
+
+
+
+
+            }
+
+
+
+
+
+
+
+
+
+        }
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+}
