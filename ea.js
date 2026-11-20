@@ -154,7 +154,7 @@ const EA = (() => {
             terrainHeight: 0, 
             cover: {"Infantry": 6, "Vehicles": false}, 
             move: {"Infantry": "Normal", "Vehicle": "Normal", "War Engine": "Normal"},
-            los: "Crops",         
+            los: "Obscured",         
         },
 
 
@@ -468,7 +468,7 @@ const EA = (() => {
             }
             this.edges = edges;
             this.terrain = ["Clear"];
-            this.level = 0;
+            this.level = 0; //ground level
             this.height = 0; //height of terrain itself
 
             this.offboard = true;
@@ -534,8 +534,7 @@ const EA = (() => {
             this.shields = parseInt(shields.replace(/[^\d]/g,""));
             
 
-
-            this.height = (this.special.includes("Towering")) ? 2:1;
+            this.height = (this.special.includes("Towering")) ? 1:0;
 
             let weapons = [];
             for (let i=1;i<6;i++) {

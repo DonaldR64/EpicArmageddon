@@ -2,11 +2,17 @@ const LOS = (shooter,target) => {
     let shooterHex = HexMap[shooter.hexLabel];
     let targetHex = HexMap[target.hexLabel];
     let distance = shooter.Distance(target);
-    let shooterHeight = shooter.height + shooterHex.level;
-    let targetHeight = target.height + targetHex.level;
-    let cover = false;
-    let obscured = false;
+    let shooterHeight = shooterHex.level;
+    if (shooter.special.includes("Towering")) {
+        shooterHeight += 2;
+    }
+    let targetHeights = [targetHex.level];
+    if (target.special.includes("Towering")) {
+        targetHeights.push(targetHex.level + 2);
+    }
 
+
+    let cover = false;
     if (target.type === "Infantry") {
         cover = targetHex.cover["Infantry"];
     } else if (target.type.includes("Vehicle")) {
@@ -30,19 +36,29 @@ const LOS = (shooter,target) => {
     let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
     let len = interLabels[0].length;
 
-    let pt1 = new Point
+    let pt1 = new Point(0,shooterHeight);
+    let pt2 = new Point(distance,targetHeight);
+
+    let los = true;
+    let blockLabel; //hex where LOS blocked
+    let obscured = false; //obscured on either path means obscured
+
+//targetheights
 
 
+
+
+    
     for (let i=0;i<len;i++) {
-
+        let blocked = 0; //if blocked === 2 then blocked
 
         for (let side=0;side<2;side++) {
-            let woods = 0;
+            let woods = 0; //2 hexes of woods
             let label = interLabels[side][i];
             let interHex = HexMap[label];
 
-
-
+            let pt3 = new Point(i,0);
+            let pt4 = new Point(i,interHex.height);
 
             if (shooterHeight === targetHeight) {
                 if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
@@ -51,11 +67,14 @@ const LOS = (shooter,target) => {
                     continue;
                 } else if (interHex.los === "Woods") {
                     woods++;
+                    obscured = true;
                     if (woods > 1) {
                         blocked++;
                         blockLabel = label;
                         continue;
                     }
+                } else if (interHex.los === "Obscured") {
+                    obscured = true;
                 }
             } else {
                 if (interHex.level > shooterHeight && interHex.level > targetHeight) {
@@ -63,27 +82,32 @@ const LOS = (shooter,target) => {
                     blockLabel = label;
                     continue;
                 }
-
-
-
-
+                let intersect = lineLine(pt1,pt2,pt3,pt4);
+                if (intersect) {
+                    if (interHex.los === "Solid") {
+                        blocked++;
+                        blockLabel = label;
+                        continue;
+                    } else if (interHex.los === "Woods") {
+                        woods++;
+                        obscured = true;
+                        if (woods > 1) {
+                            blocked++;
+                            blockLabel = label;
+                            continue;
+                        }
+                    } else if (interHex.los === "Obscured") {
+                        obscured = true;
+                    }
+                }
             }
-
-
-
-
-
-
-
-
 
         }
 
-
-
-
-
-
+        if (blocked === 2) {
+            los = false;
+            break;
+        }
 
     }
 
