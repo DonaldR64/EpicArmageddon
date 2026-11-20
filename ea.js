@@ -171,6 +171,13 @@ const EA = (() => {
             move: {"Infantry": "Normal", "Vehicle": "Difficult", "WarEngine": "Difficult"},
             los: "Woods",         
         },
+        "Building 1": {
+            name: "Building 1",
+            terrainHeight: 1, 
+            cover: {"Infantry": 4, "Vehicles": false}, 
+            move: {"Infantry": "Normal", "Vehicle": "Impassable", "WarEngine": "Impassable"},
+            los: "Solid",         
+        },
 
 
 
@@ -464,15 +471,11 @@ const EA = (() => {
             this.level = 0;
             this.height = 0; //height of terrain itself
 
-
-
-
             this.offboard = true;
             this.los = "Normal";
             this.cover = {"Infantry": false, "Vehicle": false},
             this.move = {"Infantry": "Normal", "Vehicle": "Normal", "WarEngine": "Normal"},
 
-            this.road = false;
 
             HexMap[this.label] = this;
         }
@@ -1154,7 +1157,6 @@ const EA = (() => {
 
         AddAreaTerrain();
         AddHexTerrain();
-        //roads
         AddTokens();        
         DefineMap();
         
@@ -1181,9 +1183,9 @@ const EA = (() => {
                                 hex.terrain[index] = area.name;
                             }
                             hex.terrainHeight = area.terrainHeight;
-                            hex.cover = terrain.cover;
-                            hex.move = terrain.move;
-                            hex.los = terrain.los;
+                            hex.cover = area.cover;
+                            hex.move = area.move;
+                            hex.los = area.los;
                         }
                     }
                 })
@@ -1221,81 +1223,6 @@ const EA = (() => {
 
         })
     }
-
-
-
-
-
-
-    const AddRivers = () => {
-        let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
-
-        _.each(paths,path => {
-            let types = {"#0000ff": "River","#000000": "Bridge","#ff0000": "Collapsed Bridge"};
-            let type = types[path.get("stroke").toLowerCase()];
-            if (type) {
-                let vertices = translatePoly(path);
-                //work through pairs of vertices
-                for (let i=0;i<(vertices.length -1);i++) {
-                    let pt1 = vertices[i];
-                    let pt2 = vertices[i+1];
-                    let midPt = new Point((pt1.x + pt2.x)/2,(pt1.y + pt2.y)/2);
-                    //find nearest hex to midPt
-                    let hexLabel = midPt.label();
-                    //now run through that hexes neighbours and see what intersects with original line to identify the 2 neighbouring hexes
-                    let hex1 = HexMap[hexLabel];
-                    if (!hex1) {continue}
-                    let pt3 = hex1.centre;
-                    let neighbourCubes = hex1.cube.neighbours();
-                    for (let j=0;j<neighbourCubes.length;j++) {
-                        let k = j+3;
-                        if (k> 5) {k-=6};
-                        let hex2 = HexMap[neighbourCubes[j].label()];
-                        if (!hex2) {continue}
-                        let pt4 = hex2.centre;
-                        let intersect = lineLine(pt1,pt2,pt3,pt4);
-                        if (intersect) {
-                            if (hex1.edges[DIRECTIONS[j]] !== "Bridge") {
-                                hex1.edges[DIRECTIONS[j]] = type;
-                                if (type === "Bridge") {
-                                    hex1.bridgeIDs[DIRECTIONS[j]] = path.get("id");
-                                }
-                            }
-                            if (hex2.edges[DIRECTIONS[k]] !== "Bridge") {
-                                hex2.edges[DIRECTIONS[k]] = type;
-                                if (type === "Bridge") {
-                                    hex2.bridgeIDs[DIRECTIONS[k]] = path.get("id");
-                                }                            
-                            }
-                        }
-                    }
-                }
-            }
-        })
-    }
-    
-    const AddRoads = () => {
-        let roads = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",}).filter(el => {
-            return el.get("stroke").toLowerCase() === "#ffffff";
-        });
-        _.each(roads,road => {
-            let vertices = translatePoly(road);
-            for (let i=0;i<(vertices.length-1);i++) {
-                let cube1 = vertices[i].toCube();
-                let cube2 = vertices[i+1].toCube();
-                let interCubes = cube1.linedraw(cube2);
-                interCubes.push(cube1);
-                interCubes.push(cube2);
-                _.each(interCubes, cube => {
-                    let label = cube.label();
-                    if (label && HexMap[label]) {
-                        HexMap[label].road = true;
-                    }
-                })
-            }
-        })
-    }
-
 
 
      
