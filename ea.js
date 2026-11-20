@@ -167,8 +167,8 @@ const EA = (() => {
         "Woods": {
             name: "Woods",
             terrainHeight: 2, 
-            cover: {"Infantry": false, "Vehicles": false}, 
-            move: {"Infantry": "Normal", "Vehicle": "Difficult", "WarEngine": "Difficult"},
+            cover: {"Infantry": 5, "Vehicle": false, "War Engine": false}, 
+            move: {"Infantry": "Normal", "Vehicle": "Dangerous", "WarEngine": "Dangerous"},
             los: "Woods",         
         },
         "Building 1": {
@@ -1737,17 +1737,20 @@ const EA = (() => {
 
         SetupCard("LOS","",unit1.faction);
         let d = losResult.distance * 150;
-        d = (d > 1000) ? d/1000 + "km": d + "m";
-        outputCard.body.push("Range: " + losResult.distance + " hexes [" + d + "]");
+        outputCard.body.push("Range: " + losResult.distance);
         if (losResult.los === true) {
             outputCard.body.push("There is LOS to the Target");
             if (losResult.obscured === true) {
-                outputCard.body.push("LOS Is Obscured");
+                outputCard.body.push("Obscured: -1 to hit");
+            }
+            if (losResult.cover !== false) {
+                outputCard.body.push("Cover: " + losResult.cover + "+");
             }
         } else {
             outputCard.body.push("No LOS To Target");
             outputCard.body.push("Blocked: " + losResult.losBlocked);
         }
+
 
 
         PrintCard();
@@ -1759,33 +1762,31 @@ const EA = (() => {
 
     const LOS = (shooter,target) => {
 
-        let thermal = shooter.special.includes("Thermal") ? true:false;
         let shooterHex = HexMap[shooter.hexLabel];
         let targetHex = HexMap[target.hexLabel];
-//log(shooter.name + ": " + shooter.hexLabel)
-//log(target.name + ": " + target.hexLabel)
+log(shooter.name + ": " + shooter.hexLabel)
+log(target.name + ": " + target.hexLabel)
         let distance = shooter.Distance(target);
-        let shooterHeight = shooter.Height();
-        let targetHeight = target.Height();
+        let shooterHeight = shooter.height + shooterHex.level;
+        let targetHeight = target.height + targetHex.level;
         let delta = shooterHeight - targetHeight;
-        let smokeHexes = 0;
-
-        let maxLOS = 70;
-        if (state.EA.weatherLevel === 3 && Scenario.night === true) {
-            maxLOS = 7;
+        let cover = false;
+        let obscured = false;
+        if (target.type === "Infantry") {
+            cover = targetHex.cover["Infantry"];
+        } else if (target.type.includes("Vehicle")) {
+            cover = targetHex.cover["Vehicle"];
+        } else if (target.type.includes("War Engine")) {
+            cover = targetHex.cover["WarEngine"];
         }
-        if (state.EA.weatherLevel === 4) {
-            maxLOS = 3;
-        }
 
-        if (distance > maxLOS) {
+        if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
             let result = {
                 distance: distance,
-                los: false,
-                losBlocked: "Maximum LOS Is " + maxLOS,
+                los: true,
+                losBlocked: "",
+                cover: cover,
                 obscured: false,
-                delta: delta,
-                smokeHexes: 0,
             }
             return result;
         }
@@ -1794,53 +1795,42 @@ const EA = (() => {
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
-//log("S Height: " + shooterHeight)
-//log("T Height: " + targetHeight)
+log("S Height: " + shooterHeight)
+log("T Height: " + targetHeight)
 
-//log(interLabels)
+log(interLabels)
         let finalBlockAt;
         let finalLOS = true;
-        let finalObscured = 0;
-        let edgeBlock = 0;
+        let finalObscured = false;
 
         for (let i=0;i<len;i++) {
             let los = true;
-            let obscured = 0;
             let blocked = 0;
+            let obscured = false;
             let blockLabel;
 
             for (let side=0;side<2;side++) {
+                let woods = 0;
                 let label = interLabels[side][i];
                 let interHex = HexMap[label];
-//log(side + " - " + label + ": " + interHex.terrain)
-//log("H:" + interHex.height)
-//log("LOS: " + interHex.los)
+log(side + " - " + label + ": " + interHex.terrain)
+log("H:" + interHex.height)
+log("LOS: " + interHex.los)
                 //terrain
-                if (interHex.smoke !== false) {
-//log("Smoke")
-                    //1 smoke hex, even if hexside, blocks LOS, unless thermal
-                    if (thermal === true) {
-                        smokeHexes++;
-                    } else {
-                        blocked = 2;
-                        blockLabel = label;
-                        continue;
-                    }
-                }
-                if (interHex.fire !== false) {
-                    blocked = 2;
-                    blockLabel = label;
-                    continue;
-                }
                 if (shooterHeight === targetHeight) {
-                    if ((interHex.los === "Blocks" || interHex.rubble !== false) && interHex.height > shooterHeight) {
-//log("Blocking Terrain")
+                    if (interHex.los === "Solid" && interHex.height > shooterHeight) {
+log("Blocking Terrain")
                         blocked++;
                         blockLabel = label;
                         continue;
-                    } else if (interHex.los === "Obscures" || interHex.wreck !== false) {
-                        obscured++;
-                        blockLabel = label;
+                    } else if (interHex.los === "Woods") {
+log("Woods")
+                        woods++;
+                        if (woods > 1) {
+                            blocked++;
+                            blockLabel = label;
+                            continue;
+                        }
                     }
                 } else {
                     //terrain height than both = LOS Blocked
@@ -1915,7 +1905,7 @@ const EA = (() => {
             }
         } 
 
-        let obscured = (finalObscured > 0) ? true:false;
+         obscured = (finalObscured > 0) ? true:false;
 
 
 
