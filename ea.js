@@ -145,11 +145,11 @@ const EA = (() => {
 
 
     const AreaTerrain = {
-        "#000000": {name: "Hill 1", level: 1, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
+        "#000000": {name: "Hill 1", level: 1},
 
-        "#434343": {name: "Hill 2", level: 2, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
+        "#434343": {name: "Hill 2", level: 2},
 
-        "#666666": {name: "Hill 3", level: 3, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
+        "#666666": {name: "Hill 3", level: 3},
 
         "#00ff00": {name: "Woods",terrainHeight: 2, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
 
@@ -442,8 +442,8 @@ const EA = (() => {
                 edges[DIRECTIONS[i]] = "Open";
             }
             this.edges = edges;
-            this.terrain = "Clear";
-
+            this.terrain = ["Clear"];
+            this.level = 0;
             this.height = 0; //height of terrain itself
 
             this.offboard = true;
@@ -1133,7 +1133,7 @@ const EA = (() => {
         }
 
 
-        //AddTerrain();    
+        AddTerrain();    
         AddTokens();        
         DefineMap();
         
@@ -1153,16 +1153,16 @@ const EA = (() => {
             let area = AreaTerrain[path.get("stroke").toLowerCase()];
             if (area) {
                 let vertices = translatePoly(path);
-                _.each(HexMap, hex => {
-                    let pos = pointInPolygon(hex.centre,vertices);
-                    if (pos) {
-                        
+                _.each(HexMap,hex => {
+                    let test = pointInPolygon(hex.centre,vertices);
+                    if (test) {
+                        if (area.name.includes("Hill")) {
+                            hex.level = area.level;
+                            hex.terrain.push(area.name);
+                        } else {
 
 
-
-
-
-
+                        }
                     }
                 })
             }
