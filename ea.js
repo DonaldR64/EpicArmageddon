@@ -518,10 +518,13 @@ const EA = (() => {
             this.cc = parseInt(attributes.cc) || 7;
             this.ff = parseInt(attributes.ff) || 7;
             this.init = parseInt(attributes.initiative);
+            let s0 = attributes.special0 || "Nil";
+            let s1 = attributes.special1 || "";
+            let s2 = attributes.special2 || "";
 
-            let s0 = attributes.special0.split(',').map(e => e.trim());
-            let s1 = attributes.special1.split(",").map(e => e.trim());
-            let s2 = attributes.special2.split(",").map(e => e.trim());
+            s0 = s0.split(',').map(e => e.trim());
+            s1 = s1.split(",").map(e => e.trim());
+            s2 = s2.split(",").map(e => e.trim());
             this.special = [].concat(s0,s1,s2);
             this.critical = attributes.criticalhit;
 
