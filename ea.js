@@ -144,10 +144,14 @@ const EA = (() => {
 
 
 
-    const TerrainInfo = {
-      
+    const AreaTerrain = {
+        "#000000": {name: "Hill 1", level: 1, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
 
+        "#434343": {name: "Hill 2", level: 2, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
 
+        "#666666": {name: "Hill 3", level: 3, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
+
+        "#00ff00": {name: "Woods",terrainHeight: 2, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
 
 
 
@@ -1138,49 +1142,40 @@ const EA = (() => {
     };
 
     const AddTerrain = () => {
-        //add terrain using tokens
-        let tokens = findObjs({_pageid: Campaign().get("playerpageid"),_type: "graphic",_subtype: "token",layer: "map",});
-        _.each(tokens,token => {
-            let centre = new Point(token.get("left"),token.get('top'));
-            let centreLabel = centre.toCube().label();
-            let hex = HexMap[centreLabel];
-            let id = token.get("id");
-            let name = token.get("name");
-            if (name.includes("Smoke")) {
-                hex.smoke = id;
-            }
-            if (name === "BurntOut") {
-                hex.burntOut = id;
-            }
-            if (name === "Rubble") {
-                hex.rubble = id;
-            }
-            if (name === "Fire") {
-                hex.fire = id;
-            }
-            if (name === "Wreck") {
-                hex.wreck = id;
-            }
-            if (name.includes("Mines")) {
-                hex.minefield = id;
-            }
-            if (name === "Improved Positions") {
-                hex.improved = id;
-            }
-            if (name === "Cleared") {
-                hex.cleared = id;
-            }
-            let terrain = TerrainInfo[name];
-            if (terrain) {
-                let keys = Object.keys(terrain);
-                _.each(keys,key => {
-                    hex[key] = terrain[key];
-                })        
+        AddAreaTerrain();
+        //AddRivers();
+        //AddRoads();
+    }
+
+    const AddAreaTerrain = () => {
+        let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
+        _.each(paths,path => {
+            let area = AreaTerrain[path.get("stroke").toLowerCase()];
+            if (area) {
+                let vertices = translatePoly(path);
+                _.each(HexMap, hex => {
+                    let pos = pointInPolygon(hex.centre,vertices);
+                    if (pos) {
+                        
+
+
+
+
+
+
+                    }
+                })
             }
         })
-        AddRivers();
-        AddRoads();
+
+
+
+
+
     }
+
+
+
 
 
     const AddRivers = () => {
