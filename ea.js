@@ -143,22 +143,40 @@ const EA = (() => {
     };
 
 
-
+    //hill los will be based on rays
+    //others as hex
     const AreaTerrain = {
         "#000000": {name: "Hill 1", level: 1},
-
         "#434343": {name: "Hill 2", level: 2},
-
         "#666666": {name: "Hill 3", level: 3},
-
-        "#00ff00": {name: "Woods",terrainHeight: 2, infantryCover: false, infantryMove: "Normal", vehicleMove: "Normal", weMove: "Normal"},
+        "#ff9900": {
+            name: "Crops",
+            terrainHeight: 0, 
+            cover: {"Infantry": 6, "Vehicles": false}, 
+            move: {"Infantry": "Normal", "Vehicle": "Normal", "WarEngine": "Normal"},
+            los: "Crops",         
+        },
 
 
 
     }
 
 
+    //hex los: Clear, Crops, Woods (2 hexes), Solid (Buildings etc)
+    const HexTerrain = {
+        "Woods": {
+            name: "Woods",
+            terrainHeight: 2, 
+            cover: {"Infantry": false, "Vehicles": false}, 
+            move: {"Infantry": "Normal", "Vehicle": "Difficult", "WarEngine": "Difficult"},
+            los: "Woods",         
+        },
 
+
+
+
+
+    }
 
 
 
@@ -446,14 +464,15 @@ const EA = (() => {
             this.level = 0;
             this.height = 0; //height of terrain itself
 
+
+
+
             this.offboard = true;
             this.los = "Normal";
-            this.cover = {"Infantry": false, "Vehicles": false},
-            this.dangerous = false;
-            this.difficult = false;
+            this.cover = {"Infantry": false, "Vehicle": false},
+            this.move = {"Infantry": "Normal", "Vehicle": "Normal", "WarEngine": "Normal"},
 
             this.road = false;
-
 
             HexMap[this.label] = this;
         }
@@ -1133,7 +1152,9 @@ const EA = (() => {
         }
 
 
-        AddTerrain();    
+        AddAreaTerrain();
+        AddHexTerrain();
+        //roads
         AddTokens();        
         DefineMap();
         
@@ -1141,11 +1162,6 @@ const EA = (() => {
         log("Hex Map Built in " + elapsed/1000 + " seconds");
     };
 
-    const AddTerrain = () => {
-        AddAreaTerrain();
-        //AddRivers();
-        //AddRoads();
-    }
 
     const AddAreaTerrain = () => {
         let paths = findObjs({_pageid: Campaign().get("playerpageid"),_type: "pathv2",layer: "map",});
@@ -1160,8 +1176,14 @@ const EA = (() => {
                             hex.level = area.level;
                             hex.terrain.push(area.name);
                         } else {
-
-
+                            let index = hex.terrain.indexOf("Clear");
+                            if (index > -1) {
+                                hex.terrain[index] = area.name;
+                            }
+                            hex.terrainHeight = area.terrainHeight;
+                            hex.cover = terrain.cover;
+                            hex.move = terrain.move;
+                            hex.los = terrain.los;
                         }
                     }
                 })
@@ -1169,10 +1191,37 @@ const EA = (() => {
         })
 
 
-
-
-
     }
+
+    const AddHexTerrain = () => {
+        let tokens = findObjs({
+            _pageid: Campaign().get("playerpageid"),
+            _type: "graphic",
+            _subtype: "token",
+            layer: "map",
+        });
+        _.each(tokens, token => {
+            let terrain = HexTerrain[token.get("name")];
+            if (terrain) {
+                let c = new Point(token.get("left"), token.get("top"));
+                let label = c.label();
+                let hex = HexMap[label];
+                let index = hex.terrain.indexOf("Clear");
+                if (index > -1) {
+                    hex.terrain[index] = terrain.name;
+                }
+                hex.terrainHeight = terrain.terrainHeight;
+                hex.cover = terrain.cover;
+                hex.move = terrain.move;
+                hex.los = terrain.los;
+            }
+
+
+
+
+        })
+    }
+
 
 
 
