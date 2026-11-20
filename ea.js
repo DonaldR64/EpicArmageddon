@@ -2016,7 +2016,7 @@ log("Woods")
                     bar2_value: unit.shields,
                     bar2_max: unit.shields,
                     showplayers_bar2: true,
-                    aura2_color: "#ff00ff",
+                    aura2_color: "#00bbff80",
                     aura2_opacity: 1,
                     aura2_radius: 0.25,
                     aura2_options: "circleborder",
