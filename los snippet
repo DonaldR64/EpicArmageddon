@@ -47,6 +47,7 @@ const LOS = (shooter,target) => {
 
 
     let obscured = false; //obscured on either path means obscured
+    let finalLOS = true;
 
     for (let h=0;h<targetHexes.length;h++) {
         let targetHex = targetHexes[h];
