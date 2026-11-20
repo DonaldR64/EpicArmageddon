@@ -2532,11 +2532,18 @@ log("Woods")
             let prevHex = HexMap[prevLabel];
             log(unit.name + " moving")
             let labels = [newLabel];
-
+            if (unit.type === "War Engine") {
+                let neighbours = newHex.cube.neighbours();
+                _.each(neighbours,neighbour => {
+                    labels.push(neighbour.label())
+                })
+            }
             let illegal = false;
             for (let i=0;i<labels.length;i++) {
                 let label = labels[i];
                 let hex = HexMap[label];
+log(label)
+log(hex.move)
                 if ((hex.move["Infantry"] === "Impassable" && unit.type === "Infantry") || (hex.move["Vehicle"] === "Impassable" && unit.type.includes("Vehicle")) || (hex.move["War Engine"] === "Impassable" && unit.type === "War Engine")) {
                     illegal = true;
                     break;
