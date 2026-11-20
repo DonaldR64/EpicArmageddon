@@ -167,7 +167,7 @@ const EA = (() => {
         "Woods": {
             name: "Woods",
             terrainHeight: 2, 
-            cover: {"Infantry": 5, "Vehicle": false, "War Engine": false}, 
+            cover: {"Infantry": 5, "Vehicle": false}, 
             move: {"Infantry": "Normal", "Vehicle": "Dangerous", "War Engine": "Dangerous"},
             los: "Woods",         
         },
