@@ -1,0 +1,144 @@
+const LOS = (shooter,target) => {
+    let shooterHex = HexMap[shooter.hexLabel];
+    let targetHexes = [HexMap[target.hexLabel]];
+    let distance = shooter.Distance(target);
+
+    if (target.type === "War Engine") {
+        //hexes with clear los to target hex
+        targetHexes = [];
+        let neighbours = targetHexes[0].cube.neighbours();
+        let neighbourLabels = neighbours.map(cube => cube.label());
+        _.each(neighbours,neighbour => {
+            let hex = HexMap[neighbour.label()];
+            let list = hex.cube.linedraw(targetHexes[0].cube);
+            let listLabels = list.map(cube => cube.label());
+            if (findCommonElements(neighbourLabels,listLabels) === false) {
+                targetHexes.push(hex);
+            }
+        })
+    }
+
+    let shooterHeight = shooterHex.level;
+    if (shooter.special.includes("Towering")) {
+        shooterHeight += 2;
+    }
+    let targetHeights = [targetHexes[0].level];
+    if (target.special.includes("Towering")) {
+        targetHeights.push(targetHexes[0].level + 2);
+    }
+
+    let cover = false;
+    if (target.type === "Infantry") {
+        cover = targetHexes[0].cover["Infantry"];
+    } else if (target.type.includes("Vehicle")) {
+        cover = targetHexes[0].cover["Vehicle"];
+    }
+
+    let obscured = (cover === false) ? false:true;
+
+    let los = false;
+    let blockLabel; //label of hex where los is blocked
+
+    if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
+        let result = {
+            distance: distance,
+            los: true,
+            losBlocked: "",
+            cover: cover,
+            obscured: obscured,
+        }
+        return result;
+    }
+
+    let pt1 = new Point(0,shooterHeight);
+
+    losLoop1:
+    for (let a=0;a<targetHexes.length;a++) {
+        let targetHex = targetHexes[a];
+        let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
+        let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
+        let len = interLabels[0].length;
+
+
+        for (let j=0;j<targetHeights.length;j++) {
+            let targetHeight = targetHeights[j];
+
+            let pt2 = new Point(distance,targetHeight);
+
+            let blocked = 0;
+
+            for (let side=0;side<2;side++) {
+                for (let i=0;i<len;i++) {
+                
+                    let label = interLabels[side][i];
+                    let interHex = HexMap[label];
+
+                    let pt3 = new Point(i,0);
+                    let pt4 = new Point(i,interHex.height);
+
+                    if (shooterHeight === targetHeight) {
+                        if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
+                            blocked++;
+                            blockLabel = label;
+                            continue;
+                        } else if (interHex.los === "Obscured") {
+                            obscured = true;
+                        }
+                    } else {
+                        if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+                            blocked++;
+                            blockLabel = label;
+                            continue;
+                        }
+                        let intersect = lineLine(pt1,pt2,pt3,pt4);
+                        if (intersect) {
+                            if (interHex.los === "Solid") {
+                                blocked++;
+                                blockLabel = label;
+                                continue;
+                            } else if (interHex.los === "Obscured") {
+                                obscured = true;
+                            }
+                        }
+                    }
+
+
+
+
+                }
+
+
+            }
+
+            if (blocked < 2) {
+                if (blocked === 1) {
+                    obscured = true;
+                } 
+                los = true;
+            }
+
+        }
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

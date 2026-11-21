@@ -154,7 +154,7 @@ const EA = (() => {
             terrainHeight: 0, 
             cover: {"Infantry": 6, "Vehicles": false}, 
             move: {"Infantry": "Normal", "Vehicle": "Normal", "War Engine": "Normal"},
-            los: "Obscured",         
+            los: "Obscures",         
         },
 
 
@@ -169,7 +169,7 @@ const EA = (() => {
             terrainHeight: 2, 
             cover: {"Infantry": 5, "Vehicle": false}, 
             move: {"Infantry": "Normal", "Vehicle": "Dangerous", "War Engine": "Dangerous"},
-            los: "Woods",         
+            los: "Solid",         
         },
         "Building 1": {
             name: "Building 1",
@@ -580,7 +580,7 @@ const EA = (() => {
             this.token = token;
 
             this.hexLabel = hexLabel; //current location
-
+            
             let formationID = "";
             if (state.EA.unitInfo[id]) {
                 formationID = state.EA.unitInfo[id];
@@ -2527,35 +2527,7 @@ log("Woods")
         let newLabel = new Point(tok.get("left"),tok.get("top")).toCube().label();
         let prevLabel = new Point(prev.left,prev.top).toCube().label();
         if (unit && newLabel !== prevLabel) {
-            let newHex = HexMap[newLabel];
-            let prevHex = HexMap[prevLabel];
-            log(unit.name + " moving")
-            let labels = [newLabel];
-            if (unit.type === "War Engine") {
-                let neighbours = newHex.cube.neighbours();
-                _.each(neighbours,neighbour => {
-                    labels.push(neighbour.label())
-                })
-            }
-            let illegal = false;
-            for (let i=0;i<labels.length;i++) {
-                let label = labels[i];
-                let hex = HexMap[label];
-                if ((hex.move["Infantry"] === "Impassable" && unit.type === "Infantry") || (hex.move["Vehicle"] === "Impassable" && unit.type.includes("Vehicle")) || (hex.move["War Engine"] === "Impassable" && unit.type === "War Engine")) {
-                    illegal = true;
-                    break;
-                }
-            }
-
-            if (illegal === true) {
-                PlaySound("Bap")
-                newHex = prevHex;                
-            }
-            tok.set({
-                left: newHex.centre.x,
-                top: newHex.centre.y,
-            })
-            unit.hexLabel = newHex.label;
+            MoveHex(newLabel,prevLabel,unit);
         }
         if ((tok.get("height") !== prev.height || tok.get("width") !== prev.width) && state.EA.turn !== 0) {
             tok.set({

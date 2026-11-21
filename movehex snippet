@@ -1,0 +1,50 @@
+const MoveHex = (newLabel,prevLabel,unit) => {
+    let newHex = HexMap[newLabel];
+    let prevHex = HexMap[prevLabel];
+    let oldLabels = [prevLabel];
+    let newLabels = [newLabel];
+    if (unit.type === "War Engine") {
+        _.each(newHex.cube.neighbours(),neighbour => {
+            labels.push(neighbour.label())
+        })
+        _.each(prevHex.cube.neighbours(),neighbour => {
+            oldLabels.push(neighbour.label())
+        })
+    }
+    let illegal = false;
+    for (let i=0;i<newLabels.length;i++) {
+        let label = newLabels[i];
+        let hex = HexMap[label];
+        if ((hex.move["Infantry"] === "Impassable" && unit.type === "Infantry") || (hex.move["Vehicle"] === "Impassable" && unit.type.includes("Vehicle")) || (hex.move["War Engine"] === "Impassable" && unit.type === "War Engine")) {
+            illegal = true;
+            break;
+        }
+    }
+    if (illegal === true) {
+        PlaySound("Bap")
+        tok.set({
+            left: prevHex.centre.x,
+            top: prevHex.centre.y,
+        })        
+        return;
+    }
+
+    unit.hexLabel = newLabel;
+
+    _.each(oldLabels,label => {
+        let hex = HexMap[label];
+        let index = hex.tokenIDs.indexOf(unit.id);
+        if (index > -1) {
+            hex.tokenIDs.splice(index,1);
+        }
+    })
+    _.each(newLabels,label => {
+        let hex = HexMap[label];
+        let index = hex.tokenIDs.indexOf(unit.id);
+        if (index === -1) {
+            hex.tokenIDs.push(unit.id);
+        }
+    })
+}
+
+
