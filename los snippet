@@ -56,6 +56,12 @@ const LOS = (shooter,target) => {
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
+
+
+
+
+
+        
         let pt1 = new Point(0,shooterHeight);
         let pt2 = new Point(distance,targetHeight);
 
