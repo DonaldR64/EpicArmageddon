@@ -49,61 +49,35 @@ const LOS = (shooter,target) => {
     let obscured = false; //obscured on either path means obscured
     let finalLOS = true;
 
-    for (let h=0;h<targetHexes.length;h++) {
-        let targetHex = targetHexes[h];
+    for (let th=0;th<targetHexes.length;th++) {
+        let targetHex = targetHexes[th];
 
-        let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
-        let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
-        let len = interLabels[0].length;
+        for (let hh=0;hh<targetHeights.length;hh++) {
+            let targetHeight = targetHeights[hh];
 
+            let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
+            let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
+            let len = interLabels[0].length;
+            
+            let pt1 = new Point(0,shooterHeight);
+            let pt2 = new Point(distance,targetHeight);
 
+            let los = true;
+            let blockLabel; //hex where LOS blocked
+            
+            for (let i=0;i<len;i++) {
+                let blocked = 0; //if blocked === 2 then blocked
 
+                for (let side=0;side<2;side++) {
+                    let woods = 0; //2 hexes of woods
+                    let label = interLabels[side][i];
+                    let interHex = HexMap[label];
 
+                    let pt3 = new Point(i,0);
+                    let pt4 = new Point(i,interHex.height);
 
-
-        
-        let pt1 = new Point(0,shooterHeight);
-        let pt2 = new Point(distance,targetHeight);
-
-        let los = true;
-        let blockLabel; //hex where LOS blocked
-        
-        for (let i=0;i<len;i++) {
-            let blocked = 0; //if blocked === 2 then blocked
-
-            for (let side=0;side<2;side++) {
-                let woods = 0; //2 hexes of woods
-                let label = interLabels[side][i];
-                let interHex = HexMap[label];
-
-                let pt3 = new Point(i,0);
-                let pt4 = new Point(i,interHex.height);
-
-                if (shooterHeight === targetHeight) {
-                    if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    } else if (interHex.los === "Woods") {
-                        woods++;
-                        obscured = true;
-                        if (woods > 1) {
-                            blocked++;
-                            blockLabel = label;
-                            continue;
-                        }
-                    } else if (interHex.los === "Obscured") {
-                        obscured = true;
-                    }
-                } else {
-                    if (interHex.level > shooterHeight && interHex.level > targetHeight) {
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    }
-                    let intersect = lineLine(pt1,pt2,pt3,pt4);
-                    if (intersect) {
-                        if (interHex.los === "Solid") {
+                    if (shooterHeight === targetHeight) {
+                        if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
                             blocked++;
                             blockLabel = label;
                             continue;
@@ -118,22 +92,45 @@ const LOS = (shooter,target) => {
                         } else if (interHex.los === "Obscured") {
                             obscured = true;
                         }
+                    } else {
+                        if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+                            blocked++;
+                            blockLabel = label;
+                            continue;
+                        }
+                        let intersect = lineLine(pt1,pt2,pt3,pt4);
+                        if (intersect) {
+                            if (interHex.los === "Solid") {
+                                blocked++;
+                                blockLabel = label;
+                                continue;
+                            } else if (interHex.los === "Woods") {
+                                woods++;
+                                obscured = true;
+                                if (woods > 1) {
+                                    blocked++;
+                                    blockLabel = label;
+                                    continue;
+                                }
+                            } else if (interHex.los === "Obscured") {
+                                obscured = true;
+                            }
+                        }
                     }
+
+                }
+
+                if (blocked === 2) {
+                    los = false;
+                    break;
                 }
 
             }
 
-            if (blocked === 2) {
-                los = false;
-                break;
-            }
+
+
 
         }
-
-
-
-
-
     }
 
 
