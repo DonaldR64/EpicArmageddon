@@ -589,6 +589,11 @@ const EA = (() => {
 
             //let transportID = Object.keys(state.EA.passengerID).find(key => state.EA.passengerID[key] === id);
 
+
+            this.targetIDArray = [];
+
+
+
             Units[id] = this;
 
             log(this)
@@ -1761,6 +1766,65 @@ const EA = (() => {
         let elapsed = Date.now()-startTime;
         log("Check LOS " + elapsed/1000 + " seconds");
     }
+
+
+    const GroupLOS = (msg) => {
+        let startTime = Date.now();
+
+        let Tag = msg.content.split(";");
+        let unit1 = Units[Tag[1]];
+        let unit2 = Units[Tag[2]];
+        if (!unit1 || !unit2) {
+            sendChat("","Invalid Units")
+            return;
+        }
+        SetupCard("LOS Check","",unit1.faction);
+
+        let shooterFormation = Formations[unit1.formationID];
+        let targetFormation = Formations[unit2.formationID];
+        let obscured = false;
+        let noLOS = true;
+
+        for (let i=0;i<shooterFormation.unitIDs.length;i++) {
+            let shooter = shooterFormation.unitIDs[i];
+            let targetIDArray = [];
+
+            for (let j=0;j<targetFormation.unitIDs.length;j++) {
+                let target = targetFormation.unitIDs[j];
+                let losResult = LOS(shooter,target);
+                if (losResult.los === false) {
+                    continue;
+                }
+                noLOS = false;
+                if (losResult.obscured) {
+                    obscured = true;
+                }
+                targetIDArray.push({
+                    id: target.id,
+                    range: losResult.distance,
+                    obsscured: losResult.obscured,
+                    cover: losResult.cover,
+                })
+            }
+            shooter.targetIDArray = targetIDArray;
+            outputCard.body.push(shooter.name + ": " + targetIDArray.length + " Targets");
+        }
+
+        if (noLOS === true) {
+            outputCard.body.push("No LOS To Any in Target Formation");
+        } else {
+            if (obscured === true) {
+                outputCard.body.push("Some of the Targets are Obscured/In Cover");
+            }
+        }
+
+        PrintCard();
+
+        let elapsed = Date.now()-startTime;
+        log("Check LOS " + elapsed/1000 + " seconds");
+    }
+
+
 
 
     const LOS = (shooter,target) => {

@@ -1,154 +1,55 @@
-const LOS = (shooter,target) => {
-    let shooterHex = HexMap[shooter.hexLabel];
-    let targetHexes = [HexMap[target.hexLabel]];
-    let distance = shooter.Distance(target);
+const GroupLOS = (msg) => {
+    let startTime = Date.now();
 
-    if (target.type === "War Engine") {
-        //hexes with clear los to target hex
-        targetHexes = [];
-        let neighbours = targetHexes[0].cube.neighbours();
-        let neighbourLabels = neighbours.map(cube => cube.label());
-        _.each(neighbours,neighbour => {
-            let hex = HexMap[neighbour.label()];
-            let list = hex.cube.linedraw(targetHexes[0].cube);
-            let listLabels = list.map(cube => cube.label());
-            if (findCommonElements(neighbourLabels,listLabels) === false) {
-                targetHexes.push(hex);
+    let Tag = msg.content.split(";");
+    let unit1 = Units[Tag[1]];
+    let unit2 = Units[Tag[2]];
+    if (!unit1 || !unit2) {
+        sendChat("","Invalid Units")
+        return;
+    }
+    SetupCard("LOS Check","",unit1.faction);
+
+    let shooterFormation = Formations[unit1.formationID];
+    let targetFormation = Formations[unit2.formationID];
+    let obscured = false;
+    let noLOS = true;
+
+    for (let i=0;i<shooterFormation.unitIDs.length;i++) {
+        let shooter = shooterFormation.unitIDs[i];
+        let targetIDArray = [];
+
+        for (let j=0;j<targetFormation.unitIDs.length;j++) {
+            let target = targetFormation.unitIDs[j];
+            let losResult = LOS(shooter,target);
+            if (losResult.los === false) {
+                continue;
             }
-        })
-    }
-
-    let shooterHeight = shooterHex.level;
-    if (shooter.special.includes("Towering")) {
-        shooterHeight += 2;
-    }
-    let targetHeights = [targetHexes[0].level];
-    if (target.special.includes("Towering")) {
-        targetHeights.push(targetHexes[0].level + 2);
-    }
-
-    let cover = false;
-    if (target.type === "Infantry") {
-        cover = targetHexes[0].cover["Infantry"];
-    } else if (target.type.includes("Vehicle")) {
-        cover = targetHexes[0].cover["Vehicle"];
-    }
-
-    if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
-        let result = {
-            distance: distance,
-            los: true,
-            losBlocked: "",
-            cover: cover,
-            obscured: false,
+            noLOS = false;
+            if (losResult.obscured) {
+                obscured = true;
+            }
+            targetIDArray.push({
+                id: target.id,
+                range: losResult.distance,
+                obsscured: losResult.obscured,
+                cover: losResult.cover,
+            })
         }
-        return result;
+        shooter.targetIDArray = targetIDArray;
+        outputCard.body.push(shooter.name + ": " + targetIDArray.length + " Targets");
     }
 
-
-    let obscured = false; //obscured on either path means obscured
-    let finalLOS = true;
-
-    for (let th=0;th<targetHexes.length;th++) {
-        let targetHex = targetHexes[th];
-
-        for (let hh=0;hh<targetHeights.length;hh++) {
-            let targetHeight = targetHeights[hh];
-
-            let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
-            let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
-            let len = interLabels[0].length;
-            
-            let pt1 = new Point(0,shooterHeight);
-            let pt2 = new Point(distance,targetHeight);
-
-            let los = true;
-            let blockLabel; //hex where LOS blocked
-            
-            for (let i=0;i<len;i++) {
-                let blocked = 0; //if blocked === 2 then blocked
-
-                for (let side=0;side<2;side++) {
-                    let woods = 0; //2 hexes of woods
-                    let label = interLabels[side][i];
-                    let interHex = HexMap[label];
-
-                    let pt3 = new Point(i,0);
-                    let pt4 = new Point(i,interHex.height);
-
-                    if (shooterHeight === targetHeight) {
-                        if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
-                            blocked++;
-                            blockLabel = label;
-                            continue;
-                        } else if (interHex.los === "Woods") {
-                            woods++;
-                            obscured = true;
-                            if (woods > 1) {
-                                blocked++;
-                                blockLabel = label;
-                                continue;
-                            }
-                        } else if (interHex.los === "Obscured") {
-                            obscured = true;
-                        }
-                    } else {
-                        if (interHex.level > shooterHeight && interHex.level > targetHeight) {
-                            blocked++;
-                            blockLabel = label;
-                            continue;
-                        }
-                        let intersect = lineLine(pt1,pt2,pt3,pt4);
-                        if (intersect) {
-                            if (interHex.los === "Solid") {
-                                blocked++;
-                                blockLabel = label;
-                                continue;
-                            } else if (interHex.los === "Woods") {
-                                woods++;
-                                obscured = true;
-                                if (woods > 1) {
-                                    blocked++;
-                                    blockLabel = label;
-                                    continue;
-                                }
-                            } else if (interHex.los === "Obscured") {
-                                obscured = true;
-                            }
-                        }
-                    }
-
-                }
-
-                if (blocked === 2) {
-                    los = false;
-                    break;
-                }
-
-            }
-
-
-
-
+    if (noLOS === true) {
+        outputCard.body.push("No LOS To Any in Target Formation");
+    } else {
+        if (obscured === true) {
+            outputCard.body.push("Some of the Targets are Obscured/In Cover");
         }
     }
 
+    PrintCard();
 
+    let elapsed = Date.now()-startTime;
+    log("Check LOS " + elapsed/1000 + " seconds");
 }
-
-if (interHex.level > shooterHeight && interHex.level > targetHeight) {
-    blocked++;
-    blockLabel = label;
-    continue;
-}
-let intersect = lineLine(pt1,pt2,pt3,pt4);
-                        if (intersect) {
-                            if (interHex.los === "Solid") {
-                                blocked++;
-                                blockLabel = label;
-                                continue;
-                            } else if (interHex.los === "Obscured") {
-                                obscured = true;
-                            }
-                        }
-
