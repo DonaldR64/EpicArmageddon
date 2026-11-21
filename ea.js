@@ -1786,11 +1786,11 @@ const EA = (() => {
         let noLOS = true;
 
         for (let i=0;i<shooterFormation.unitIDs.length;i++) {
-            let shooter = shooterFormation.unitIDs[i];
+            let shooter = Units[shooterFormation.unitIDs[i]];
             let targetIDArray = [];
 
             for (let j=0;j<targetFormation.unitIDs.length;j++) {
-                let target = targetFormation.unitIDs[j];
+                let target = Units[targetFormation.unitIDs[j]];
                 let losResult = LOS(shooter,target);
                 if (losResult.los === false) {
                     continue;
@@ -2701,6 +2701,9 @@ log("War Engine")
                 break;
             case '!Activate':
                 Activate(msg);
+                break;
+            case '!GroupLOS':
+                GroupLOS(msg);
                 break;
 
 
