@@ -1749,7 +1749,7 @@ const EA = (() => {
             }
         } else {
             outputCard.body.push("No LOS To Target");
-            outputCard.body.push("Blocked: " + losResult.losBlocked);
+            outputCard.body.push("Blocked at: " + losResult.losBlocked);
         }
 
 
@@ -1762,24 +1762,45 @@ const EA = (() => {
 
 
     const LOS = (shooter,target) => {
-
         let shooterHex = HexMap[shooter.hexLabel];
-        let targetHex = HexMap[target.hexLabel];
-log(shooter.name + ": " + shooter.hexLabel)
-log(target.name + ": " + target.hexLabel)
+        let targetHexes = [HexMap[target.hexLabel]];
         let distance = shooter.Distance(target);
-        let shooterHeight = shooter.height + shooterHex.level;
-        let targetHeight = target.height + targetHex.level;
-        let delta = shooterHeight - targetHeight;
-        let cover = false;
-        let obscured = false;
-        if (target.type === "Infantry") {
-            cover = targetHex.cover["Infantry"];
-        } else if (target.type.includes("Vehicle")) {
-            cover = targetHex.cover["Vehicle"];
-        } else if (target.type.includes("War Engine")) {
-            cover = targetHex.cover["War Engine"];
+
+        if (target.type === "War Engine") {
+            //hexes with clear los to target hex
+            targetHexes = [];
+            let neighbours = targetHexes[0].cube.neighbours();
+            let neighbourLabels = neighbours.map(cube => cube.label());
+            _.each(neighbours,neighbour => {
+                let hex = HexMap[neighbour.label()];
+                let list = hex.cube.linedraw(targetHexes[0].cube);
+                let listLabels = list.map(cube => cube.label());
+                if (findCommonElements(neighbourLabels,listLabels) === false) {
+                    targetHexes.push(hex);
+                }
+            })
         }
+
+        let shooterHeight = shooterHex.level;
+        if (shooter.special.includes("Towering")) {
+            shooterHeight += 2;
+        }
+        let targetHeights = [targetHexes[0].level];
+        if (target.special.includes("Towering")) {
+            targetHeights.push(targetHexes[0].level + 2);
+        }
+
+        let cover = false;
+        if (target.type === "Infantry") {
+            cover = targetHexes[0].cover["Infantry"];
+        } else if (target.type.includes("Vehicle")) {
+            cover = targetHexes[0].cover["Vehicle"];
+        }
+
+        let obscured = (cover === false) ? false:true;
+
+        let los = false;
+        let blockLabel; //label of hex where los is blocked
 
         if (shooter.type === "Aircraft" || target.type === "Aircraft" || shooter.type === "Spacecraft") {
             let result = {
@@ -1787,141 +1808,107 @@ log(target.name + ": " + target.hexLabel)
                 los: true,
                 losBlocked: "",
                 cover: cover,
-                obscured: false,
+                obscured: obscured,
             }
             return result;
         }
 
-        let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
-        let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
-        let len = interLabels[0].length;
+        let pt1 = new Point(0,shooterHeight);
 
-log("S Height: " + shooterHeight)
-log("T Height: " + targetHeight)
+        losLoop1:
+        for (let a=0;a<targetHexes.length;a++) {
+            let targetHex = targetHexes[a];
+            let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
+            let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
+            let len = interLabels[0].length;
 
-log(interLabels)
-        let finalBlockAt;
-        let finalLOS = true;
-        let finalObscured = false;
+            losLoop2:
+            for (let j=0;j<targetHeights.length;j++) {
+                let targetHeight = targetHeights[j];
 
-        for (let i=0;i<len;i++) {
-            let los = true;
-            let blocked = 0;
-            let obscured = false;
-            let blockLabel;
+                let pt2 = new Point(distance,targetHeight);
 
-            for (let side=0;side<2;side++) {
-                let woods = 0;
-                let label = interLabels[side][i];
-                let interHex = HexMap[label];
-log(side + " - " + label + ": " + interHex.terrain)
-log("H:" + interHex.height)
-log("LOS: " + interHex.los)
-                //terrain
-                if (shooterHeight === targetHeight) {
-                    if (interHex.los === "Solid" && interHex.height > shooterHeight) {
-log("Blocking Terrain")
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    } else if (interHex.los === "Woods") {
-log("Woods")
-                        woods++;
-                        if (woods > 1) {
+                let blocked = 0;
+
+                for (let side=0;side<2;side++) {
+                    for (let i=0;i<len;i++) {
+                    
+                        let label = interLabels[side][i];
+                        let interHex = HexMap[label];
+
+                        let pt3 = new Point(i,0);
+                        let pt4 = new Point(i,interHex.height);
+
+                        if (interHex.level > shooterHeight && interHex.level > targetHeight) {
                             blocked++;
                             blockLabel = label;
                             continue;
                         }
-                    }
-                } else {
-                    //terrain height than both = LOS Blocked
-                    if (interHex.height > shooterHeight && interHex.height > targetHeight) {
-//log("Intervening Higher Terrain")
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    }
-                    //terrain higher than one and equal to other = LOS Blocked
-                    if ((interHex.height > shooterHeight && interHex.height === targetHeight) || (interHex.height > targetHeight && interHex.height === shooterHeight)) {
-//log("Higher than one, equal to other")
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    }
-                    //Blind Spots for 1 height difference
-                    if (shooterHeight - interHex.height === 1 && interHex.height > targetHeight) {
-                        if (len < 2*i) {
-//log("Blind Spot")
-                            blocked++;
-                            blockLabel = label;
-                            continue;
+                        let intersect = lineLine(pt1,pt2,pt3,pt4);
+                        if (intersect) {
+                            if (interHex.los === "Solid") {
+                                blocked++;
+                                blockLabel = label;
+                                continue;
+                            } else if (interHex.los === "Obscured") {
+                                obscured = true;
+                            }
                         }
-                    }
-                    if (targetHeight - interHex.height === 1 && interHex.height > shooterHeight) {
-                        if (len > 2*i) {
-//log("Blind Spot")
+                        
+                        let tokenIDs = interHex.tokenIDs;
+                        for (let u2=0;u2<tokenIDs.length;u2++) {
+                            let unit2 = Units[tokenIDs[u2]];
+                            if (unit2.type === "War Engine") {
+                                let height = (unit2.special.includes("Towering")) ? 2:1;
+                                pt4 = new Point(i, interHex.height + height);
+                                let intersect = lineLine(pt1,pt2,pt3,pt4);
+                                if (intersect) {
+                                    blocked++;
+                                    blockLabel = label;
+                                    continue;
+                                }
+                            }
+                        }
 
-                            blocked++;
-                            blockLabel = label;
-                            continue;
-                        }
+
+
+
                     }
-                    //Blind spot for 2 height+ differrence is one hex
-                    if ((shooterHeight - interHex.height > 1 && i === (len-1) && interHex.height > targetHeight) ||  (targetHeight - interHex.height > 1 && i === 0 && interHex.height > shooterHeight) ) {
-//log("Blind Spot 2+")
-                        blocked++;
-                        blockLabel = label;
-                        continue;
-                    }
+
 
                 }
-            }
 
-            //if only 1 of hexes is obscured, then obscured will be 1 and ignore, if both are obscured, then los is obscured
-            if (obscured === 2) {
-                finalObscured++;
-                if (finalObscured > 1) {
-//log("2 Obscuring Hexes")
-                    finalBlockAt = blockLabel;
-                    finalLOS = false;
-                    break;
+                if (blocked < 2) {
+                    if (blocked === 1) {
+                        obscured = true;
+                    } 
+                    los = true;
+                }
+
+                if (obscured && los) {
+                    break losLoop1; //if has los, only important to check if obscured
+                }
+
+                if (los) {
+                    break losLoop2; //los to one height, no need to do others
                 }
             }
-
-            //if only 1 of hexes is blocked, then add to edgeBlock
-            //if 2 edges blocked, or 2 of hexes blocked then no LOS
-            if (blocked === 1) {
-                edgeBlock++;
-                if (edgeBlock > 1) {
-//log("2 Blocking Edges")
-                    finalBlockAt = blockLabel;
-                    finalLOS = false;
-                    break;
-                } 
-            } else if (blocked === 2) {
-//log("both hexes block")
-                finalBlockAt = blockLabel;
-                finalLOS = false;
-                break;
-            }
-        } 
-
-         obscured = (finalObscured > 0) ? true:false;
-
-
-
+        }
 
         let result = {
             distance: distance,
-            los: finalLOS,
-            losBlocked: finalBlockAt,
+            los: los,
+            losBlocked: losBlocked,
+            cover: cover,
             obscured: obscured,
-            delta: delta,
-            smokeHexes: smokeHexes,
         }
-
         return result;
     }
+
+
+
+
+
 
     const HexData = (msg) => {
         if (!msg.selected) {return};
@@ -2501,20 +2488,55 @@ log("Woods")
         return newToken.id;
     }
 
-
-
-    const ChangeTokenIDs = (unit,startLabel,endLabel) => {
-        if (attachedTypes.includes(unit.type)) {return};
-        let startHex = HexMap[startLabel];
-        let endHex = HexMap[endLabel]
-        let index = startHex.tokenIDs.indexOf(unit.id);
-        if (index > -1) {
-            startHex.tokenIDs.splice(index,1);
+    const MoveHex = (newLabel,prevLabel,unit) => {
+        let newHex = HexMap[newLabel];
+        let prevHex = HexMap[prevLabel];
+        let oldLabels = [prevLabel];
+        let newLabels = [newLabel];
+        if (unit.type === "War Engine") {
+            _.each(newHex.cube.neighbours(),neighbour => {
+                labels.push(neighbour.label())
+            })
+            _.each(prevHex.cube.neighbours(),neighbour => {
+                oldLabels.push(neighbour.label())
+            })
         }
-        if (!endHex.tokenIDs.includes(unit.id)) {
-            endHex.tokenIDs.push(unit.id);
+        let illegal = false;
+        for (let i=0;i<newLabels.length;i++) {
+            let label = newLabels[i];
+            let hex = HexMap[label];
+            if ((hex.move["Infantry"] === "Impassable" && unit.type === "Infantry") || (hex.move["Vehicle"] === "Impassable" && unit.type.includes("Vehicle")) || (hex.move["War Engine"] === "Impassable" && unit.type === "War Engine")) {
+                illegal = true;
+                break;
+            }
         }
+        if (illegal === true) {
+            PlaySound("Bap")
+            tok.set({
+                left: prevHex.centre.x,
+                top: prevHex.centre.y,
+            })        
+            return;
+        }
+
+        unit.hexLabel = newLabel;
+
+        _.each(oldLabels,label => {
+            let hex = HexMap[label];
+            let index = hex.tokenIDs.indexOf(unit.id);
+            if (index > -1) {
+                hex.tokenIDs.splice(index,1);
+            }
+        })
+        _.each(newLabels,label => {
+            let hex = HexMap[label];
+            let index = hex.tokenIDs.indexOf(unit.id);
+            if (index === -1) {
+                hex.tokenIDs.push(unit.id);
+            }
+        })
     }
+
 
 
 

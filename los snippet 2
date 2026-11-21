@@ -59,7 +59,7 @@ const LOS = (shooter,target) => {
         let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
         let len = interLabels[0].length;
 
-
+        losLoop2:
         for (let j=0;j<targetHeights.length;j++) {
             let targetHeight = targetHeights[j];
 
@@ -76,28 +76,33 @@ const LOS = (shooter,target) => {
                     let pt3 = new Point(i,0);
                     let pt4 = new Point(i,interHex.height);
 
-                    if (shooterHeight === targetHeight) {
-                        if ((interHex.level > shooterHeight) || (interHex.los === "Solid" && interHex.height > shooterHeight)) {
+                    if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+                        blocked++;
+                        blockLabel = label;
+                        continue;
+                    }
+                    let intersect = lineLine(pt1,pt2,pt3,pt4);
+                    if (intersect) {
+                        if (interHex.los === "Solid") {
                             blocked++;
                             blockLabel = label;
                             continue;
                         } else if (interHex.los === "Obscured") {
                             obscured = true;
                         }
-                    } else {
-                        if (interHex.level > shooterHeight && interHex.level > targetHeight) {
-                            blocked++;
-                            blockLabel = label;
-                            continue;
-                        }
-                        let intersect = lineLine(pt1,pt2,pt3,pt4);
-                        if (intersect) {
-                            if (interHex.los === "Solid") {
+                    }
+                    
+                    let tokenIDs = interHex.tokenIDs;
+                    for (let u2=0;u2<tokenIDs.length;u2++) {
+                        let unit2 = Units[tokenIDs[u2]];
+                        if (unit2.type === "War Engine") {
+                            let height = (unit2.special.includes("Towering")) ? 2:1;
+                            pt4 = new Point(i, interHex.height + height);
+                            let intersect = lineLine(pt1,pt2,pt3,pt4);
+                            if (intersect) {
                                 blocked++;
                                 blockLabel = label;
                                 continue;
-                            } else if (interHex.los === "Obscured") {
-                                obscured = true;
                             }
                         }
                     }
@@ -117,28 +122,22 @@ const LOS = (shooter,target) => {
                 los = true;
             }
 
+            if (obscured && los) {
+                break losLoop1; //if has los, only important to check if obscured
+            }
+
+            if (los) {
+                break losLoop2; //los to one height, no need to do others
+            }
         }
-
-
-
-
-
-
-
-
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    let result = {
+        distance: distance,
+        los: los,
+        losBlocked: losBlocked,
+        cover: cover,
+        obscured: obscured,
+    }
+    return result;
 }

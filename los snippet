@@ -135,3 +135,20 @@ const LOS = (shooter,target) => {
 
 
 }
+
+if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+    blocked++;
+    blockLabel = label;
+    continue;
+}
+let intersect = lineLine(pt1,pt2,pt3,pt4);
+                        if (intersect) {
+                            if (interHex.los === "Solid") {
+                                blocked++;
+                                blockLabel = label;
+                                continue;
+                            } else if (interHex.los === "Obscured") {
+                                obscured = true;
+                            }
+                        }
+
