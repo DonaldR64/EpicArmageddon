@@ -600,7 +600,7 @@ const EA = (() => {
 
         Distance(b) {
             let distance = HexMap[this.hexLabel].Distance(HexMap[b.hexLabel]);
-            if (this.type === "War Engine") {
+            if (this.type === "War Engine" || b.type === "War Engine") {
                 distance -= 1;
             }
             return distance;
@@ -1183,7 +1183,7 @@ const EA = (() => {
                             if (index > -1) {
                                 hex.terrain[index] = area.name;
                             }
-                            hex.terrainHeight = area.terrainHeight;
+                            hex.height = area.terrainHeight;
                             hex.cover = area.cover;
                             hex.move = area.move;
                             hex.los = area.los;
@@ -1213,7 +1213,7 @@ const EA = (() => {
                 if (index > -1) {
                     hex.terrain[index] = terrain.name;
                 }
-                hex.terrainHeight = terrain.terrainHeight;
+                hex.height = terrain.terrainHeight;
                 hex.cover = terrain.cover;
                 hex.move = terrain.move;
                 hex.los = terrain.los;
@@ -1727,6 +1727,8 @@ const EA = (() => {
 
 
     const CheckLOS = (msg) => {
+        let startTime = Date.now();
+
         let Tag = msg.content.split(";");
         let unit1 = Units[Tag[1]];
         let unit2 = Units[Tag[2]];
@@ -1756,8 +1758,8 @@ const EA = (() => {
 
         PrintCard();
 
-
-
+        let elapsed = Date.now()-startTime;
+        log("Check LOS " + elapsed/1000 + " seconds");
     }
 
 
@@ -1768,17 +1770,18 @@ const EA = (() => {
 
         if (target.type === "War Engine") {
             //hexes with clear los to target hex
-            targetHexes = [];
             let neighbours = targetHexes[0].cube.neighbours();
             let neighbourLabels = neighbours.map(cube => cube.label());
+            targetHexes = [];
             _.each(neighbours,neighbour => {
                 let hex = HexMap[neighbour.label()];
-                let list = hex.cube.linedraw(targetHexes[0].cube);
+                let list = hex.cube.linedraw(shooterHex.cube);
                 let listLabels = list.map(cube => cube.label());
                 if (findCommonElements(neighbourLabels,listLabels) === false) {
                     targetHexes.push(hex);
                 }
             })
+
         }
 
         let shooterHeight = shooterHex.level;
@@ -1818,6 +1821,7 @@ const EA = (() => {
         losLoop1:
         for (let a=0;a<targetHexes.length;a++) {
             let targetHex = targetHexes[a];
+log("Target Hex: " + targetHex.label)
             let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
             let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
             let len = interLabels[0].length;
@@ -1825,32 +1829,37 @@ const EA = (() => {
             losLoop2:
             for (let j=0;j<targetHeights.length;j++) {
                 let targetHeight = targetHeights[j];
-
+log("Target Height: " + targetHeight)
                 let pt2 = new Point(distance,targetHeight);
 
                 let blocked = 0;
 
+                losLoop3:
                 for (let side=0;side<2;side++) {
+log("Side: " + side)
                     for (let i=0;i<len;i++) {
                     
                         let label = interLabels[side][i];
                         let interHex = HexMap[label];
-
+log(i + ": " + label)
+log("Level: "+ interHex.level + " / Height: " + interHex.height)
                         let pt3 = new Point(i,0);
                         let pt4 = new Point(i,interHex.height);
-
                         if (interHex.level > shooterHeight && interHex.level > targetHeight) {
+log("Hill")
                             blocked++;
                             blockLabel = label;
-                            continue;
+                            continue losLoop3;
                         }
                         let intersect = lineLine(pt1,pt2,pt3,pt4);
                         if (intersect) {
                             if (interHex.los === "Solid") {
+log("Solid")
                                 blocked++;
                                 blockLabel = label;
-                                continue;
+                                continue losLoop3;
                             } else if (interHex.los === "Obscured") {
+log("Obscured")
                                 obscured = true;
                             }
                         }
@@ -1858,14 +1867,16 @@ const EA = (() => {
                         let tokenIDs = interHex.tokenIDs;
                         for (let u2=0;u2<tokenIDs.length;u2++) {
                             let unit2 = Units[tokenIDs[u2]];
+                            if (unit2.id === shooter.id || unit2.id === target.id) {continue};
                             if (unit2.type === "War Engine") {
                                 let height = (unit2.special.includes("Towering")) ? 2:1;
                                 pt4 = new Point(i, interHex.height + height);
                                 let intersect = lineLine(pt1,pt2,pt3,pt4);
                                 if (intersect) {
+log("War Engine")
                                     blocked++;
                                     blockLabel = label;
-                                    continue;
+                                    continue losLoop3;
                                 }
                             }
                         }
@@ -1898,7 +1909,7 @@ const EA = (() => {
         let result = {
             distance: distance,
             los: los,
-            losBlocked: losBlocked,
+            losBlocked: blockLabel,
             cover: cover,
             obscured: obscured,
         }
@@ -2495,7 +2506,7 @@ const EA = (() => {
         let newLabels = [newLabel];
         if (unit.type === "War Engine") {
             _.each(newHex.cube.neighbours(),neighbour => {
-                labels.push(neighbour.label())
+                newLabels.push(neighbour.label())
             })
             _.each(prevHex.cube.neighbours(),neighbour => {
                 oldLabels.push(neighbour.label())
