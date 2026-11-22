@@ -1,5 +1,5 @@
 const EA = (() => {
-    const version = '2026.11.16';
+    const version = '2026.11.22';
     if (!state.EA) {state.EA = {}};
 
     const pageInfo = {};
