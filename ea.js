@@ -1898,6 +1898,10 @@ const EA = (() => {
 
         }
 
+        let overwatch = (target.type === "Infantry" && Formations[target.formationID].action === "Overwatch") ? true:false;
+
+
+
         let shooterHeight = shooterHex.level;
         if (shooter.special.includes("Towering")) {
             shooterHeight += 2;
@@ -1910,11 +1914,27 @@ const EA = (() => {
         let cover = false;
         if (target.type === "Infantry") {
             cover = targetHexes[0].cover["Infantry"];
+            if (overwatch) {
+                cover = Math.min(cover,5);
+            }
         } else if (target.type.includes("Vehicle")) {
             cover = targetHexes[0].cover["Vehicle"];
         }
 
         let obscured = (cover === false) ? false:true;
+
+        let neighbourCubes = targetHexes[0].cube.neighbours();
+        _.each(neighbourCubes, cube => {
+            let tokenIDs = HexMap[cube.label()].tokenIDs;
+            _.each(tokenIDs, tid => {
+                let unit2 = Units[tid];
+                if (unit2.faction === target.faction && (unit2.type === "Armoured Vehicle" || unit2.type === "War Engine")) {
+                    obscured = true;
+                }
+            })
+        })
+
+
 
         let los = false;
         let blockLabel; //label of hex where los is blocked
