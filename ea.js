@@ -1266,8 +1266,8 @@ const EA = (() => {
             });
             if (line) {
                 toFront(line);
-                if (type === "LOS") {
-                    state.EA.losLines.push(line.get("id"))
+                if (type === "Deploy") {
+                    state.EA.deployLines.push(line.get("id"))
                 }
             }
         }
