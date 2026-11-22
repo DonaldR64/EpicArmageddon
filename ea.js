@@ -151,7 +151,7 @@ const EA = (() => {
         "#666666": {name: "Hill 3", level: 3},
         "#ff9900": {
             name: "Crops",
-            terrainHeight: 0, 
+            terrainHeight: .5, 
             cover: {"Infantry": 6, "Vehicles": false}, 
             move: {"Infantry": "Normal", "Vehicle": "Normal", "War Engine": "Normal"},
             los: "Obscures",         
@@ -1972,7 +1972,7 @@ log("Solid")
                                 blocked++;
                                 blockLabel = label;
                                 continue losLoop3;
-                            } else if (interHex.los === "Obscured") {
+                            } else if (interHex.los === "Obscures" && target.type !== "War Engine") {
 log("Obscured")
                                 obscured = true;
                             }
