@@ -382,7 +382,7 @@ const EA = (() => {
 
         ring(radius) {
             let results = [];
-            let b = new Cube(-1 * radius,0,1 * radius);  //start at west 
+            let b = new Cube(-1 * radius,1 * radius,0);  //start at soutwest 
             let cube = this.add(b);
             for (let i=0;i<6;i++) {
                 //for each direction
@@ -596,11 +596,6 @@ const EA = (() => {
             this.formationID = formationID;
 
             //let transportID = Object.keys(state.EA.passengerID).find(key => state.EA.passengerID[key] === id);
-
-
-            this.targetIDArray = [];
-
-
 
             Units[id] = this;
             log(this)
@@ -1925,23 +1920,6 @@ const EA = (() => {
 
         let obscured = (cover === false) ? false:true;
 
-        if (obscured === false && target.type === "Infantry") {
-            let neighbourCubes = targetHexes[0].cube.neighbours();
-            _.each(neighbourCubes, cube => {
-                let label = cube.label();
-                let tokenIDs = HexMap[label].tokenIDs;
-    log(label)
-                _.each(tokenIDs, tid => {
-                    let unit2 = Units[tid];
-    log(unit2.name + " / " + unit2.type)
-                    if (unit2.player === target.player && unit2.type === "Armoured Vehicle") {
-                        obscured = true;
-                    }
-                })
-            })
-        }
-
-
         let los = false;
         let blockLabel; //label of hex where los is blocked
 
@@ -2019,14 +1997,12 @@ const EA = (() => {
                                     continue losLoop3;
                                 }
                             }
+                            if ((unit2.type === "War Engine" || unit2.type === "Armoured Vehicle" || unit2.type === "Super-Heavy Vehicle") && target.type === "Infantry") {
+log("Infantry using vehicle as cover")
+                                obscured = true;
+                            }
                         }
-
-
-
-
                     }
-
-
                 }
 
                 if (blocked < 2) {
@@ -2059,7 +2035,9 @@ const EA = (() => {
 
     const FormationLOS = (unit1,unit2) => {
 
-
+        _.each(Units,unit => {
+            unit.protected = 0;
+        })
         let shooterFormation = Formations[unit1.formationID];
         let targetFormation = Formations[unit2.formationID];
 
