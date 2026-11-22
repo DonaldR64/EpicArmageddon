@@ -1239,6 +1239,43 @@ const EA = (() => {
     }
 
 
+    const DrawLine = (pt1,pt2,colour = "#ff0000",type = "Deploy") => {
+        let points = [[pt1.x,pt1.y],[pt2.x,pt2.y]];
+        let x = (pt1.x + pt2.x)/2;
+        let y = (pt1.y + pt2.y)/2;
+
+        let layer = "foreground";
+        if (type === "Deploy") {
+            layer = "map";
+        }
+
+        let page = getObj('page',Campaign().get('playerpageid'));
+        if(page) {
+            let line = createObj('pathv2',{
+                layer: layer,
+                pageid: page.id,
+                shape: "pol",
+                stroke: colour,
+                stroke_width: 7,
+                x: x,
+                y: y,
+                points: JSON.stringify(points),
+            });
+            if (line) {
+                toFront(line);
+                if (type === "LOS") {
+                    state.EA.losLines.push(line.get("id"))
+                } else {
+                    state.EA.deployLines.push(line.get("id"));
+                }
+            }
+        }
+    }
+
+
+
+
+
      
     const AddTokens = () => {
         //add tokens on token layer to arrays
@@ -1394,6 +1431,10 @@ const EA = (() => {
             formationMarkers: [[],[]],
             strategy: [0,0],
             activations: [],
+            losLines: [],
+            deployLines: [],
+
+
         }
     
 
@@ -1804,22 +1845,26 @@ const EA = (() => {
         let keys = Object.keys(info.shooterInfo);
         for (let i=0;i<keys.length;i++) {
             let shooter = Units[keys[i]];
-            let maxRange = shooter.maxRange;
-            let targetIDArray = info.shooterInfo[keys[i]];
-            _.each(targetIDArray, tid => {
-                let target = Units[tid.id];
+            let shooterInfo = info.shooterInfo[keys[i]];
+            log(shooter.name)
+            log(shooterInfo)
+    
+            _.each(shooterInfo, targetInfo => {
+                let target = Units[targetInfo.id];
                 let colour = "#00ff00";
-                if (tid.obscured === true) {
+                if (targetInfo.obscured) {
                     colour = "#ffff00";
+                    if (targetInfo.cover !== false) {
+                        colour = "#ff0000";
+                    }
                 }
-                if (tid.range > maxRange) {
-                    colour = "#ff0000";
+                if (targetInfo.range > shooter.maxRange) {
+                    colour = "#000000";
                 }
-                
-
-
+                DrawLine(HexMap[shooter.hexLabel].centre, HexMap[target.hexLabel].centre, colour, "LOS");
             })
-            
+
+
         }
 
 
@@ -2015,7 +2060,7 @@ log("War Engine")
                 targetIDArray.push({
                     id: target.id,
                     range: losResult.distance,
-                    obsscured: losResult.obscured,
+                    obscured: losResult.obscured,
                     cover: losResult.cover,
                 })
             }
