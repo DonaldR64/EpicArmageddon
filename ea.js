@@ -291,10 +291,10 @@ const EA = (() => {
         angle(b) {
             //angle between 2 hexes
             let origin = this.toPoint();
-            let destifaction = b.toPoint();
+            let destination = b.toPoint();
 
-            let x = Math.round(origin.x - destifaction.x);
-            let y = Math.round(origin.y - destifaction.y);
+            let x = Math.round(origin.x - destination.x);
+            let y = Math.round(origin.y - destination.y);
             let phi = Math.atan2(y,x);
             phi = phi * (180/Math.PI);
             phi = Math.round(phi);
@@ -658,6 +658,34 @@ const EA = (() => {
                 this.token.set("bar3_value",bm);
             }
         }
+
+        Arc(b) {
+            let angle = HexMap[this.hexLabel].cube.angle(HexMap[b.hexLabel].cube);
+log(angle)
+log(this.token.get("rotation"))
+            angle = Angle(angle - this.token.get("rotation"));
+            let arcs = [];
+            if (angle <= 45 || angle >= 315) {
+                arcs.push("Fixed Forward");
+            }
+            if (angle <= 90 || angle >= 270) {
+                arcs.push("Forward")
+            }
+            if (angle >= 90 && angle <= 270) {
+                arcs.push("Rear");
+            }
+            if ((angle >= 0 && angle <= 180) || angle === 360) {
+                arcs.push("Right");
+            }
+            if ((angle >= 180 && angle <= 360) || angle === 0) {
+                arcs.push("Left");
+            }
+            return arcs;
+        }
+
+
+
+
 
 
 
@@ -1790,6 +1818,10 @@ const EA = (() => {
         SetupCard("LOS","",unit1.faction);
         let d = losResult.distance * 150;
         outputCard.body.push("Range: " + losResult.distance);
+
+        outputCard.body.push("Target is in the " + losResult.arcs.toString() + " Arcs");
+
+
         if (losResult.los === true) {
             outputCard.body.push("There is LOS to the Target");
             if (losResult.obscured === true) {
@@ -1877,6 +1909,8 @@ const EA = (() => {
         let targetHexes = [HexMap[target.hexLabel]];
         let distance = shooter.Distance(target);
 
+        let arcs = shooter.Arc(target);
+
         if (target.type === "War Engine") {
             //hexes with clear los to target hex
             let neighbours = targetHexes[0].cube.neighbours();
@@ -1930,6 +1964,7 @@ const EA = (() => {
                 losBlocked: "",
                 cover: cover,
                 obscured: obscured,
+                arcs: arcs,
             }
             return result;
         }
@@ -2027,6 +2062,7 @@ const EA = (() => {
             losBlocked: blockLabel,
             cover: cover,
             obscured: obscured,
+            arcs: arcs,
         }
         return result;
     }
@@ -2683,7 +2719,7 @@ const EA = (() => {
         }
         if (illegal === true) {
             PlaySound("Bap")
-            tok.set({
+            unit.token.set({
                 left: prevHex.centre.x,
                 top: prevHex.centre.y,
             })        
