@@ -603,8 +603,11 @@ const EA = (() => {
 
 
             Units[id] = this;
-
             log(this)
+
+            if (HexMap[hexLabel].tokenIDs.includes(this.id) === false) {
+                HexMap[hexLabel].tokenIDs.push(this.id);
+            }
 
 
 
@@ -1265,8 +1268,6 @@ const EA = (() => {
                 toFront(line);
                 if (type === "LOS") {
                     state.EA.losLines.push(line.get("id"))
-                } else {
-                    state.EA.deployLines.push(line.get("id"));
                 }
             }
         }
@@ -1431,7 +1432,6 @@ const EA = (() => {
             formationMarkers: [[],[]],
             strategy: [0,0],
             activations: [],
-            losLines: [],
             deployLines: [],
 
 
@@ -1840,14 +1840,14 @@ const EA = (() => {
             }
         }
 
-    log(info)
+    //log(info)
 
         let keys = Object.keys(info.shooterInfo);
         for (let i=0;i<keys.length;i++) {
             let shooter = Units[keys[i]];
             let shooterInfo = info.shooterInfo[keys[i]];
-            log(shooter.name)
-            log(shooterInfo)
+            //log(shooter.name)
+            //log(shooterInfo)
     
             _.each(shooterInfo, targetInfo => {
                 let target = Units[targetInfo.id];
@@ -1921,20 +1921,26 @@ const EA = (() => {
             cover = targetHexes[0].cover["Vehicle"];
         }
 
+
+
         let obscured = (cover === false) ? false:true;
-
-        let neighbourCubes = targetHexes[0].cube.neighbours();
-        _.each(neighbourCubes, cube => {
-            let tokenIDs = HexMap[cube.label()].tokenIDs;
-            _.each(tokenIDs, tid => {
-                let unit2 = Units[tid];
-                if (unit2.faction === target.faction && (unit2.type === "Armoured Vehicle" || unit2.type === "War Engine")) {
-                    obscured = true;
-                }
+/*
+        if (obscured === false && target.type === "Infantry") {
+            let neighbourCubes = targetHexes[0].cube.neighbours();
+            _.each(neighbourCubes, cube => {
+                let label = cube.label();
+                let tokenIDs = HexMap[label].tokenIDs;
+    log(label)
+                _.each(tokenIDs, tid => {
+                    let unit2 = Units[tid];
+    log(unit2.name + " / " + unit2.type)
+                    if (unit2.faction === target.faction && unit2.type === "Armoured Vehicle") {
+                        obscured = true;
+                    }
+                })
             })
-        })
-
-
+        }
+*/
 
         let los = false;
         let blockLabel; //label of hex where los is blocked
@@ -1955,7 +1961,7 @@ const EA = (() => {
         losLoop1:
         for (let a=0;a<targetHexes.length;a++) {
             let targetHex = targetHexes[a];
-log("Target Hex: " + targetHex.label)
+//log("Target Hex: " + targetHex.label)
             let interCubes = [shooterHex.cube.linedraw(targetHex.cube),shooterHex.cube.linedraw2(targetHex.cube)];
             let interLabels = [interCubes[0].map((e)=> e.label()), interCubes[1].map((e)=> e.label())];
             let len = interLabels[0].length;
@@ -1963,24 +1969,24 @@ log("Target Hex: " + targetHex.label)
             losLoop2:
             for (let j=0;j<targetHeights.length;j++) {
                 let targetHeight = targetHeights[j];
-log("Target Height: " + targetHeight)
+//log("Target Height: " + targetHeight)
                 let pt2 = new Point(distance,targetHeight);
 
                 let blocked = 0;
 
                 losLoop3:
                 for (let side=0;side<2;side++) {
-log("Side: " + side)
+//log("Side: " + side)
                     for (let i=0;i<len;i++) {
                     
                         let label = interLabels[side][i];
                         let interHex = HexMap[label];
-log(i + ": " + label)
-log("Level: "+ interHex.level + " / Height: " + interHex.height)
+//log(i + ": " + label)
+//log("Level: "+ interHex.level + " / Height: " + interHex.height)
                         let pt3 = new Point(i,0);
                         let pt4 = new Point(i,interHex.height);
                         if (interHex.level > shooterHeight && interHex.level > targetHeight) {
-log("Hill")
+//log("Hill")
                             blocked++;
                             blockLabel = label;
                             continue losLoop3;
@@ -1988,12 +1994,12 @@ log("Hill")
                         let intersect = lineLine(pt1,pt2,pt3,pt4);
                         if (intersect) {
                             if (interHex.los === "Solid") {
-log("Solid")
+//log("Solid")
                                 blocked++;
                                 blockLabel = label;
                                 continue losLoop3;
                             } else if (interHex.los === "Obscures" && target.type !== "War Engine") {
-log("Obscured")
+//log("Obscured")
                                 obscured = true;
                             }
                         }
@@ -2007,7 +2013,7 @@ log("Obscured")
                                 pt4 = new Point(i, interHex.height + height);
                                 let intersect = lineLine(pt1,pt2,pt3,pt4);
                                 if (intersect) {
-log("War Engine")
+//log("War Engine")
                                     blocked++;
                                     blockLabel = label;
                                     continue losLoop3;
