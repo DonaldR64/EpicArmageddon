@@ -1924,7 +1924,7 @@ const EA = (() => {
 
 
         let obscured = (cover === false) ? false:true;
-/*
+
         if (obscured === false && target.type === "Infantry") {
             let neighbourCubes = targetHexes[0].cube.neighbours();
             _.each(neighbourCubes, cube => {
@@ -1934,13 +1934,13 @@ const EA = (() => {
                 _.each(tokenIDs, tid => {
                     let unit2 = Units[tid];
     log(unit2.name + " / " + unit2.type)
-                    if (unit2.faction === target.faction && unit2.type === "Armoured Vehicle") {
+                    if (unit2.player === target.player && unit2.type === "Armoured Vehicle") {
                         obscured = true;
                     }
                 })
             })
         }
-*/
+
 
         let los = false;
         let blockLabel; //label of hex where los is blocked
