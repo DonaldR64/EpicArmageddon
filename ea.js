@@ -1998,7 +1998,6 @@ const EA = (() => {
                                 }
                             }
                             if ((unit2.type === "War Engine" || unit2.type === "Armoured Vehicle" || unit2.type === "Super-Heavy Vehicle") && target.type === "Infantry") {
-log("Infantry using vehicle as cover")
                                 obscured = true;
                             }
                         }
