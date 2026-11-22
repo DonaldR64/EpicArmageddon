@@ -537,6 +537,7 @@ const EA = (() => {
             this.height = (this.special.includes("Towering")) ? 1:0;
 
             let weapons = [];
+            let maxRange = 0;
             for (let i=1;i<6;i++) {
                 let equip = attributes["weapon" + i + "equipped"] || "Off";
                 let wname = attributes["weapon" + i + "name"];
@@ -553,6 +554,12 @@ const EA = (() => {
                 wnum = parseInt(wnum);
 
                 let wrange = attributes["weapon" + i + "range"]; //a # or FF or CC
+
+                if (isNaN(wrange) === false) {
+                    maxRange = Math.max(maxRange,parseInt(wrange));
+                }
+
+
                 let wfp = attributes["weapon" + i + "fp"];
                 let wtraits = attributes["weapon" + i + "traits"] || " ";
                 let wfx = attributes["weapon" + i + "fx"] || " ";
@@ -572,6 +579,7 @@ const EA = (() => {
             }
 
             this.weapons = weapons;
+            this.maxRange = maxRange;
 
             this.name = token.get("name");
             this.id = id;
@@ -1778,45 +1786,42 @@ const EA = (() => {
             sendChat("","Invalid Units")
             return;
         }
+
+        let info = FormationLOS(unit1,unit2);
+
         SetupCard("LOS Check","",unit1.faction);
 
-        let shooterFormation = Formations[unit1.formationID];
-        let targetFormation = Formations[unit2.formationID];
-        let obscured = false;
-        let noLOS = true;
-
-        for (let i=0;i<shooterFormation.unitIDs.length;i++) {
-            let shooter = Units[shooterFormation.unitIDs[i]];
-            let targetIDArray = [];
-
-            for (let j=0;j<targetFormation.unitIDs.length;j++) {
-                let target = Units[targetFormation.unitIDs[j]];
-                let losResult = LOS(shooter,target);
-                if (losResult.los === false) {
-                    continue;
-                }
-                noLOS = false;
-                if (losResult.obscured) {
-                    obscured = true;
-                }
-                targetIDArray.push({
-                    id: target.id,
-                    range: losResult.distance,
-                    obsscured: losResult.obscured,
-                    cover: losResult.cover,
-                })
-            }
-            shooter.targetIDArray = targetIDArray;
-            outputCard.body.push(shooter.name + ": " + targetIDArray.length + " Targets");
-        }
-
-        if (noLOS === true) {
+        if (info.noLOS === true) {
             outputCard.body.push("No LOS To Any in Target Formation");
         } else {
-            if (obscured === true) {
+            if (info.obscured === true) {
                 outputCard.body.push("Some of the Targets are Obscured/In Cover");
             }
         }
+
+    log(info)
+
+        let keys = Object.keys(info.shooterInfo);
+        for (let i=0;i<keys.length;i++) {
+            let shooter = Units[keys[i]];
+            let maxRange = shooter.maxRange;
+            let targetIDArray = info.shooterInfo[keys[i]];
+            _.each(targetIDArray, tid => {
+                let target = Units[tid.id];
+                let colour = "#00ff00";
+                if (tid.obscured === true) {
+                    colour = "#ffff00";
+                }
+                if (tid.range > maxRange) {
+                    colour = "#ff0000";
+                }
+                
+
+
+            })
+            
+        }
+
 
         PrintCard();
 
@@ -1979,6 +1984,49 @@ log("War Engine")
         }
         return result;
     }
+
+
+    const FormationLOS = (unit1,unit2) => {
+
+
+        let shooterFormation = Formations[unit1.formationID];
+        let targetFormation = Formations[unit2.formationID];
+
+        let info = {
+            obscured: false,
+            noLOS: true,
+            shooterInfo: {},
+        }
+
+        for (let i=0;i<shooterFormation.unitIDs.length;i++) {
+            let shooter = Units[shooterFormation.unitIDs[i]];
+            let targetIDArray = [];
+
+            for (let j=0;j<targetFormation.unitIDs.length;j++) {
+                let target = Units[targetFormation.unitIDs[j]];
+                let losResult = LOS(shooter,target);
+                if (losResult.los === false) {
+                    continue;
+                }
+                info.noLOS = false;
+                if (losResult.obscured) {
+                    info.obscured = true;
+                }
+                targetIDArray.push({
+                    id: target.id,
+                    range: losResult.distance,
+                    obsscured: losResult.obscured,
+                    cover: losResult.cover,
+                })
+            }
+
+            info.shooterInfo[shooter.id] = targetIDArray;
+        }
+
+        return info;
+    }
+
+
 
 
 
