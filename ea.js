@@ -2086,19 +2086,10 @@ const EA = (() => {
             Units[b].HexDistance(targetCentroid) - Units[a].HexDistance(targetCentroid)
         )
 
-_.each(shooterFormation.unitIDs, unitID => {
-    log(Units[unitID].name);
-})
         //targets sorted front to back
         targetFormation.unitIDs.sort((a,b) => 
             Units[a].HexDistance(shooterCentroid) - Units[b].HexDistance(shooterCentroid)
         )
-
-_.each(targetFormation.unitIDs, unitID => {
-    log(Units[unitID].name);
-})
-
-
 
         let info = {
             obscured: false,
@@ -2147,11 +2138,6 @@ _.each(targetFormation.unitIDs, unitID => {
                 info.shooterInfo[shooter.id] = targetIDArray;
             }
         }
-
-let keys2 = Object.keys(info.shooterInfo);
-_.each(keys2,key=>{
-    log(Units[key].name)
-})
 
 
 
