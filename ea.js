@@ -617,6 +617,13 @@ const EA = (() => {
             return distance;
         }
 
+        HexDistance(hexLabel) {
+            return HexMap[this.hexLabel].Distance(HexMap[hexLabel]);
+        }
+
+
+
+
         MakeLeader() {
             let formation = Formations[this.formationID];
             let aura = formation.action === "" ? "#00ff00":(formation.action === "Overwatch") ? "#ff00ff":"#000000";
@@ -661,8 +668,6 @@ const EA = (() => {
 
         Arc(b) {
             let angle = HexMap[this.hexLabel].cube.angle(HexMap[b.hexLabel].cube);
-log(angle)
-log(this.token.get("rotation"))
             angle = Angle(angle - this.token.get("rotation"));
             let arcs = [];
             if (angle <= 45 || angle >= 315) {
@@ -788,7 +793,21 @@ log(this.token.get("rotation"))
             leaderUnit.token.set("aura1_color",aura);
         }
 
-
+        Centroid() {
+            let xTotal = 0;
+            let yTotal = 0;
+            let len = this.unitIDs.length;
+            for (let i=0;i<len;i++) {
+                let unit = Units[this.unitIDs[i]];
+                if (unit) {
+                    xTotal += HexMap[unit.hexLabel].centre.x;
+                    yTotal += HexMap[unit.hexLabel].centre.y;
+                }
+            }
+            let centroidPoint = new Point((xTotal/len),(yTotal/len));
+            let centroid = centroidPoint.label();
+            return centroid;
+        }
 
 
 
@@ -1854,49 +1873,35 @@ log(this.token.get("rotation"))
             sendChat("","Invalid Units")
             return;
         }
+        let shooterFormation = Formations[unit1.formationID];
+        let targetFormation = Formations[unit2.formationID];
 
-        let info = FormationLOS(unit1,unit2);
+        let info = FormationLOS(shooterFormation,targetFormation);
+
+        let shooterCentroid = shooterFormation.Centroid();
+        let targetCentroid = targetFormation.Centroid();
+
 
         SetupCard("LOS Check","",unit1.faction);
 
-        if (info.noLOS === true) {
-            outputCard.body.push("No LOS To Any in Target Formation");
-        } else {
-            if (info.obscured === true) {
-                outputCard.body.push("Some of the Targets are Obscured/In Cover");
-            }
-        }
-
-    //log(info)
-
         let keys = Object.keys(info.shooterInfo);
-        for (let i=0;i<keys.length;i++) {
-            let shooter = Units[keys[i]];
-            let shooterInfo = info.shooterInfo[keys[i]];
-            //log(shooter.name)
-            //log(shooterInfo)
-    
-            _.each(shooterInfo, targetInfo => {
-                let target = Units[targetInfo.id];
-                let colour = "#00ff00";
-                if (targetInfo.obscured) {
-                    colour = "#ffff00";
-                    if (targetInfo.cover !== false) {
-                        colour = "#ff0000";
-                    }
-                }
-                if (targetInfo.range > shooter.maxRange) {
-                    colour = "#000000";
-                }
-                DrawLine(HexMap[shooter.hexLabel].centre, HexMap[target.hexLabel].centre, colour, "LOS");
-            })
-
-
+        if (keys.length === 0) {
+            outputCard.body.push("No LOS or out of Range");
+        } else {
+            let res = "Target Unit not in Cover and not Obscured";
+            let colour = "#00ff00";
+            if (info.obscured) {
+                colour = "#ffff00";
+                res = "Some Targets are Obscured";
+            }
+            if (info.cover) {
+                colour = "#ff0000";
+                res = "Some Targets have Cover";
+            }
+            outputCard.body.push(res);
+            DrawLine(HexMap[shooterCentroid].centre, HexMap[targetCentroid].centre, colour, "LOS");
         }
-
-
         PrintCard();
-
         let elapsed = Date.now()-startTime;
         log("Check LOS " + elapsed/1000 + " seconds");
     }
@@ -2068,34 +2073,69 @@ log(this.token.get("rotation"))
     }
 
 
-    const FormationLOS = (unit1,unit2) => {
+    const FormationLOS = (shooterFormation,targetFormation) => {
 
-        _.each(Units,unit => {
-            unit.protected = 0;
-        })
-        let shooterFormation = Formations[unit1.formationID];
-        let targetFormation = Formations[unit2.formationID];
+        let shooterLeader = Units[shooterFormation.leaderID];
+        let blastMarkers = parseInt(shooterLeader.token.get("bar3_value"));
+
+        let shooterCentroid = shooterFormation.Centroid();
+        let targetCentroid = targetFormation.Centroid();
+
+        //shooters sorted back to front
+        shooterFormation.unitIDs.sort((a,b) => 
+            Units[b].HexDistance(targetCentroid) - Units[a].HexDistance(targetCentroid)
+        )
+
+_.each(shooterFormation.unitIDs, unitID => {
+    log(Units[unitID].name);
+})
+        //targets sorted front to back
+        targetFormation.unitIDs.sort((a,b) => 
+            Units[a].HexDistance(shooterCentroid) - Units[b].HexDistance(shooterCentroid)
+        )
+
+_.each(targetFormation.unitIDs, unitID => {
+    log(Units[unitID].name);
+})
+
+
 
         let info = {
             obscured: false,
-            noLOS: true,
+            cover: false,
             shooterInfo: {},
         }
 
         for (let i=0;i<shooterFormation.unitIDs.length;i++) {
             let shooter = Units[shooterFormation.unitIDs[i]];
+            if (!shooter) {
+                log("Shooter ID: " + shooterFormation.unitIDs[i])
+            }
             let targetIDArray = [];
 
             for (let j=0;j<targetFormation.unitIDs.length;j++) {
                 let target = Units[targetFormation.unitIDs[j]];
+                if (!target) {
+                    log("Target ID" + targetFormation.unitIDs[j])
+                }
                 let losResult = LOS(shooter,target);
-                if (losResult.los === false) {
+
+//indirect
+                if (losResult.los === false || losResult.distance > shooter.maxRange) {
                     continue;
                 }
-                info.noLOS = false;
+//blast markers suppress units with range and los, back to front which is how shooters are sorted
+                if (blastMarkers > 0) {
+                    blastMarkers--;
+                    continue;
+                }
                 if (losResult.obscured) {
                     info.obscured = true;
                 }
+                if (losResult.cover) {
+                    info.cover = true;
+                }
+
                 targetIDArray.push({
                     id: target.id,
                     range: losResult.distance,
@@ -2103,15 +2143,35 @@ log(this.token.get("rotation"))
                     cover: losResult.cover,
                 })
             }
-
-            info.shooterInfo[shooter.id] = targetIDArray;
+            if (targetIDArray.length > 0) {
+                info.shooterInfo[shooter.id] = targetIDArray;
+            }
         }
+
+let keys2 = Object.keys(info.shooterInfo);
+_.each(keys2,key=>{
+    log(Units[key].name)
+})
+
+
 
         return info;
     }
 
 
-
+    const FormationInfo = (msg) => {
+        if (!msg.selected) {return};
+        let id = msg.selected[0]._id;
+        let unit = Units[id];
+        if (!unit) {return};
+        let formation = Formations[unit.formationID];
+        SetupCard("Formation Info","","Neutral");
+        outputCard.body.push("Player: " + formation.player);
+        outputCard.body.push("Health: " + formation.health);
+        outputCard.body.push("Starting Health: " + formation.startingHealth); 
+        outputCard.body.push("Centroid: " + formation.Centroid());
+        PrintCard();
+    }
 
 
 
@@ -2837,7 +2897,9 @@ log(this.token.get("rotation"))
             case '!GroupLOS':
                 GroupLOS(msg);
                 break;
-
+            case '!FormationInfo':
+                FormationInfo(msg);
+                break;
 
         }
     };
