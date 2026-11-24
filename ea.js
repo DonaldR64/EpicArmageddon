@@ -562,7 +562,7 @@ const EA = (() => {
                 }
 
 
-                let wfp = attributes["weapon" + i + "fp"];
+                let wfp = attributes["weapon" + i + "fp"] || " ";
                 if (wfp.includes("BP")) {
                     barrageRange = wrange;
                 }
@@ -1554,6 +1554,7 @@ const EA = (() => {
         //creates barrage template(s) and datat related to it
         let shooterID = msg.selected[0]._id;
         let shooter = Units[shooterID];
+log(shooter.name)
         let barrageID = "-P7DQOYdtsmHhmS9zNZw";
         let shooterFormation = Formations[shooter.formationID];
         let totalBP = 0;
@@ -1589,12 +1590,16 @@ const EA = (() => {
 
         for (let i=0;i<templates;i++) {
             let barrage = SummonToken(barrageID,shooter.hexLabel,70);
-            barrage.token.set({
-                aura1_radius: 1,
-                aura1_color: "#cfe2f3",
-                name: "Template " + (i+1),
-            })
-            templateIDs.push(barrage.get("id"));
+            if (barrage) {
+                barrage.token.set({
+                    aura1_radius: 1,
+                    aura1_color: "#cfe2f3",
+                    name: "Template " + (i+1),
+                })
+                templateIDs.push(barrage.get("id"));
+            } else {
+                log("No Barrage")
+            }
         }
 
         state.EA.currentBarrage = {
@@ -1602,6 +1607,11 @@ const EA = (() => {
             artWeapon: artWeapon,
             artUnitIDs: artUnitIDs,
         }
+
+
+
+log(state.EA.currentBarrage)        
+return
 
         SetupCard("Barrage","",shooter.faction);
         outputCard.body.push("Place Barrage" + s);
