@@ -714,12 +714,14 @@ const EA = (() => {
             this.blastMarkers = 0;
             this.farsight = false;
             this.action = "";
+            this.faction = "";
             Formations[id] = this;
 
             log(this)
         }
         AddUnit(id,leader = false) {
             if (this.unitIDs.includes(id) === false) {
+                this.faction = Units[id].faction;
                 if (leader === false) {
                     this.unitIDs.push(id);
                 } else {
@@ -1550,12 +1552,42 @@ const EA = (() => {
     }
 
 
+    const CreateBarrageTemplate = (hexLabel) => {
+        let hex = HexMap[hexLabel];
+        let img = getCleanImgSrc("https://files.d20.io/images/105823565/P035DS5yk74ij8TxLPU8BQ/thumb.png?1582679991");
+        let newToken = createObj("graphic", {
+            left: hex.centre.x,
+            top: hex.centre.y,
+            width: 70,
+            height: 70,
+            name: "Barrage",
+            pageid: Campaign().get("playerpageid"),
+            imgsrc: img,
+            layer: "objects",
+            represents: "-P7DQOYdtsmHhmS9zNZw",
+            aura1_radius: 1,
+            aura1_color: "#cfe2f3",
+        })
+        return newToken;
+    }
+
     const CreateBarrage = (msg) => {
+        //clear any existing templates
+        _.each(state.EA.currentBarrage.templateIDs, id => {
+            let token = getObj("graphic",id);
+            if (token) {
+                let template = Units[token.get("id")];
+                token.remove();
+                if (template) {
+                    delete Units[template.id];
+                }
+            }
+        })
+
         //creates barrage template(s) and datat related to it
         let shooterID = msg.selected[0]._id;
         let shooter = Units[shooterID];
 log(shooter.name)
-        let barrageID = "-P7DQOYdtsmHhmS9zNZw";
         let shooterFormation = Formations[shooter.formationID];
         let totalBP = 0;
         let leader = Units[shooterFormation.leaderID];
@@ -1565,7 +1597,7 @@ log(shooter.name)
 
         _.each(shooterFormation.unitIDs,id => {
             let unit = Units[id];
-            if (unit.barrageWeapon) {
+            if (unit.barrageRange > 0) {
                 _.each(unit.weapons, weapon => {
                     if (weapon.fp.includes("BP")) {
                         if (bm > 0) {
@@ -1589,34 +1621,23 @@ log(shooter.name)
         let templateIDs = [];
 
         for (let i=0;i<templates;i++) {
-            let barrage = SummonToken(barrageID,shooter.hexLabel,70);
-            if (barrage) {
-                barrage.token.set({
-                    aura1_radius: 1,
-                    aura1_color: "#cfe2f3",
-                    name: "Template " + (i+1),
-                })
-                templateIDs.push(barrage.get("id"));
-            } else {
-                log("No Barrage")
-            }
+            let barrageToken = CreateBarrageTemplate(shooter.hexLabel);
+            templateIDs.push(barrageToken.get("id"));
+            barrageToken.set("name","Template " + (i+1));
+            let template = new Unit(barrageToken.get("id"));
         }
 
         state.EA.currentBarrage = {
             formationID: shooter.formationID,
             artWeapon: artWeapon,
             artUnitIDs: artUnitIDs,
+            templateIDs: templateIDs,
         }
-
-
-
-log(state.EA.currentBarrage)        
-return
 
         SetupCard("Barrage","",shooter.faction);
         outputCard.body.push("Place Barrage" + s);
         if (artWeapon.traits.includes("Indirect")) {    
-            outputCard.body.push("Weapons can be fired Indirect, which will Double the Range, with a min. range of 12");
+            outputCard.body.push("Weapons can be fired Indirect, which will Double the Max Range, with a min. range of 12");
         } else {
             outputCard.body.push("All Artillery units must have Range and LOS to one Template");
         }
@@ -2245,11 +2266,12 @@ return
 
     const CheckBarrage = (msg) => {
         //checks range, LOS etc
-        let barrageID = msg.selected[0].id;
+        let barrageID = msg.selected[0]._id;
         let barrageInfo = state.EA.currentBarrage;
         let artFormation = Formations[barrageInfo.formationID];
         let indirect = barrageInfo.artWeapon.traits.includes("Indirect"); //weapon is capable of indirect fire
 
+        SetupCard("Check Barrage","",artFormation.faction);
         let barrage = Units[barrageID];
 
         let artUnits = barrageInfo.artUnitIDs.map(id => Units[id]);
@@ -2276,11 +2298,13 @@ return
             //below will only be checked if has no LOS but <= 2* range
             if (losResult.distance < 12) {
                 outputCard.body.push(artUnit.name + " is too close to fire Indirectly");
+                continue;
             }
             if (artFormation.action !== "Sustained Fire") {
                 outputCard.body.push("This Formation is not on Sustained Fire and cannot fire Indirectly");
                 break;
             }
+            outputCard.body.push(artUnit.name + " has Range & Indirect");
         }
         PrintCard();
     }
@@ -2573,6 +2597,14 @@ return
             }
         });
     }
+
+
+
+
+
+
+
+
 
 
     const FX = (type, hexLabel) => {
