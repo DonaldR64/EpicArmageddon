@@ -1,0 +1,19 @@
+const CheckBarrage = (msg) => {
+    //checks range, LOS etc
+    let barrageID = msg.selected[0].id;
+    let barrageInfo = state.EA.currentBarrage;
+    let shooterFormation = Formations[barrageInfo.formationID];
+    let indirect = barrageInfo.indirect;
+    
+
+
+
+
+
+
+
+
+
+
+
+}

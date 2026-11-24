@@ -1551,9 +1551,9 @@ const EA = (() => {
         let barrageID = "-P7DQOYdtsmHhmS9zNZw";
         let shooterFormation = Formations[shooter.formationID];
         let totalBP = 0;
-        let indirect = false;
         let leader = Units[shooterFormation.leaderID];
         let bm = parseInt(leader.token.get("bar3_value"));
+        let artWeapon;
 
         _.each(shooterFormation.unitIDs,id => {
             let unit = Units[id];
@@ -1565,9 +1565,7 @@ const EA = (() => {
                     } else {
                         let bp = parseInt(weapon.fp.replace(/[^\d]/g,""));
                         totalBP += bp;
-                        if (weapon.traits.includes("Indirect")) {
-                            indirect = true;
-                        }
+                        artWeapon = weapon;
                     }
                 }
             })
@@ -1589,14 +1587,15 @@ const EA = (() => {
         state.EA.currentBarrage = {
             formationID: shooter.formationID,
             totalBP: totalBP,
+            artWeapon: artWeapon,
         }
 
         SetupCard("Barrage","",shooter.faction);
         outputCard.body.push("Place Barrage" + s);
-        if (indirect === false) {    
-            outputCard.body.push("All Artillery units must have Range and LOS to one Template");
-        } else {
+        if (artWeapon.traits.includes("Indirect")) {    
             outputCard.body.push("Weapons can be fired Indirect, which will Double the Range, with a min. range of 12");
+        } else {
+            outputCard.body.push("All Artillery units must have Range and LOS to one Template");
         }
         outputCard.body.push("Templates must touch or overlap and be placed to maximize the # of units hit");
         PrintCard();
