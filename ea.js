@@ -2233,6 +2233,54 @@ const EA = (() => {
         PrintCard();
     }
 
+    const CheckBarrage = (msg) => {
+        //checks range, LOS etc
+        let barrageID = msg.selected[0].id;
+        let barrageInfo = state.EA.currentBarrage;
+        let artFormation = Formations[barrageInfo.formationID];
+        let indirect = barrageInfo.artWeapon.traits.includes("Indirect"); //weapon is capable of indirect fire
+
+        let barrage = Units[barrageID];
+
+        let artUnits = barrageInfo.artUnitIDs.map(id => Units[id]);
+
+        for (let i=0;i<artUnits.length;i++) {
+            let artUnit = artUnits[i];
+            let losResult = LOS(artUnit,barrage);
+            if (losResult.los && losResult.distance <= artUnit.barrageRange) {
+                outputCard.body.push(artUnit.name + " has Range & LOS");
+                continue;
+            }
+            if (losResult.los === false && indirect === false) {
+                outputCard.body.push(artUnit.name + " has no LOS");
+                continue;
+            }
+            if (losResult.distance > artUnit.barrageRange && indirect === false) {
+                outputCard.body.push(artUnit.name + " lacks the Range");
+                continue;
+            }
+            if (losResult.distance > (artUnit.barrageRange * 2) && indirect) {
+                outputCard.body.push(artUnit.name + " lacks the Range");
+                continue;
+            }
+            //below will only be checked if has no LOS but <= 2* range
+            if (losResult.distance < 12) {
+                outputCard.body.push(artUnit.name + " is too close to fire Indirectly");
+            }
+            if (artFormation.action !== "Sustained Fire") {
+                outputCard.body.push("This Formation is not on Sustained Fire and cannot fire Indirectly");
+                break;
+            }
+        }
+        PrintCard();
+    }
+
+
+
+
+
+
+
 
 
 
@@ -2960,6 +3008,13 @@ const EA = (() => {
             case '!FormationInfo':
                 FormationInfo(msg);
                 break;
+            case '!CreateBarrage':
+                CreateBarrage(msg);
+                break;
+            case '!CheckBarrage':
+                CheckBarrage(msg);
+                break;
+
 
         }
     };
