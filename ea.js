@@ -3056,6 +3056,9 @@ log(shooter.name)
             case '!CheckBarrage':
                 CheckBarrage(msg);
                 break;
+            case '!FireBarrage':
+                FireBarrage(msg);
+                break;
 
 
         }
