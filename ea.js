@@ -822,7 +822,7 @@ const EA = (() => {
 
 
 
-
+    
 
 
 
@@ -1476,7 +1476,7 @@ const EA = (() => {
             strategy: [0,0],
             activations: [],
             deployLines: [],
-
+            currentBarrage: "",
 
         }
     
@@ -1542,6 +1542,67 @@ const EA = (() => {
 
 
     }
+
+
+    const CreateBarrage = (msg) => {
+        //creates barrage template(s) and datat related to it
+        let shooterID = msg.selected[0]._id;
+        let shooter = Units[shooterID];
+        let barrageID = "-P7DQOYdtsmHhmS9zNZw";
+        let shooterFormation = Formations[shooter.formationID];
+        let totalBP = 0;
+        let indirect = false;
+        let leader = Units[shooterFormation.leaderID];
+        let bm = parseInt(leader.token.get("bar3_value"));
+
+        _.each(shooterFormation.unitIDs,id => {
+            let unit = Units[id];
+            _.each(unit.weapons, weapon => {
+                if (weapon.fp.includes("BP")) {
+                    if (bm > 0) {
+                        bm--;
+                        //unit is suppressed
+                    } else {
+                        let bp = parseInt(weapon.fp.replace(/[^\d]/g,""));
+                        totalBP += bp;
+                        if (weapon.traits.includes("Indirect")) {
+                            indirect = true;
+                        }
+                    }
+                }
+            })
+        })
+        let templates = 1;
+        if (totalBP > 3) {templates++};
+        if (totalBP > 7) {templates++};
+        let s = (templates === 1) ? "":"s";
+
+        for (let i=0;i<templates;i++) {
+            let barrage = SummonToken(barrageID,shooter.hexLabel,70);
+            barrage.token.set({
+                aura1_radius: 1,
+                aura1_color: "#cfe2f3",
+                name: "Template " + (i+1),
+            })
+        }
+
+        state.EA.currentBarrage = {
+            formationID: shooter.formationID,
+            totalBP: totalBP,
+        }
+
+        SetupCard("Barrage","",shooter.faction);
+        outputCard.body.push("Place Barrage" + s);
+        if (indirect === false) {    
+            outputCard.body.push("All Artillery units must have Range and LOS to one Template");
+        } else {
+            outputCard.body.push("Weapons can be fired Indirect, which will Double the Range, with a min. range of 12");
+        }
+        outputCard.body.push("Templates must touch or overlap and be placed to maximize the # of units hit");
+        PrintCard();
+
+    }
+
 
 
 
