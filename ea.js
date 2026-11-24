@@ -538,6 +538,8 @@ const EA = (() => {
 
             let weapons = [];
             let maxRange = 0;
+            let barrageRange = 0;
+
             for (let i=1;i<6;i++) {
                 let equip = attributes["weapon" + i + "equipped"] || "Off";
                 let wname = attributes["weapon" + i + "name"];
@@ -561,6 +563,9 @@ const EA = (() => {
 
 
                 let wfp = attributes["weapon" + i + "fp"];
+                if (wfp.includes("BP")) {
+                    barrageRange = wrange;
+                }
                 let wtraits = attributes["weapon" + i + "traits"] || " ";
                 let wfx = attributes["weapon" + i + "fx"] || " ";
                 let wsound = attributes["weapon" + i + "sound"] || " ";
@@ -580,6 +585,7 @@ const EA = (() => {
 
             this.weapons = weapons;
             this.maxRange = maxRange;
+            this.barrageRange = barrageRange;
 
             this.name = token.get("name");
             this.id = id;
@@ -1554,26 +1560,32 @@ const EA = (() => {
         let leader = Units[shooterFormation.leaderID];
         let bm = parseInt(leader.token.get("bar3_value"));
         let artWeapon;
+        let artUnitIDs = [];
 
         _.each(shooterFormation.unitIDs,id => {
             let unit = Units[id];
-            _.each(unit.weapons, weapon => {
-                if (weapon.fp.includes("BP")) {
-                    if (bm > 0) {
-                        bm--;
-                        //unit is suppressed
-                    } else {
-                        let bp = parseInt(weapon.fp.replace(/[^\d]/g,""));
-                        totalBP += bp;
-                        artWeapon = weapon;
+            if (unit.barrageWeapon) {
+                _.each(unit.weapons, weapon => {
+                    if (weapon.fp.includes("BP")) {
+                        if (bm > 0) {
+                            bm--;
+                            //unit is suppressed
+                        } else {
+                            let bp = parseInt(weapon.fp.replace(/[^\d]/g,""));
+                            totalBP += bp;
+                            artWeapon = weapon;
+                            artUnitIDs.push(id);
+                        }
                     }
-                }
-            })
+                })
+            }
+
         })
         let templates = 1;
         if (totalBP > 3) {templates++};
         if (totalBP > 7) {templates++};
         let s = (templates === 1) ? "":"s";
+        let templateIDs = [];
 
         for (let i=0;i<templates;i++) {
             let barrage = SummonToken(barrageID,shooter.hexLabel,70);
@@ -1582,12 +1594,13 @@ const EA = (() => {
                 aura1_color: "#cfe2f3",
                 name: "Template " + (i+1),
             })
+            templateIDs.push(barrage.get("id"));
         }
 
         state.EA.currentBarrage = {
             formationID: shooter.formationID,
-            totalBP: totalBP,
             artWeapon: artWeapon,
+            artUnitIDs: artUnitIDs,
         }
 
         SetupCard("Barrage","",shooter.faction);
@@ -1597,7 +1610,7 @@ const EA = (() => {
         } else {
             outputCard.body.push("All Artillery units must have Range and LOS to one Template");
         }
-        outputCard.body.push("Templates must touch or overlap and be placed to maximize the # of units hit");
+        outputCard.body.push("Templates must touch and be placed to maximize the # of units hit");
         PrintCard();
 
     }
