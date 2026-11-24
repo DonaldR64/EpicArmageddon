@@ -631,6 +631,7 @@ const EA = (() => {
                 aura1_color: aura,
                 aura1_opacity: 1,
                 aura1_radius: 0.1,
+                aura1_options: "circleborder",
                 bar3_value: formation.blastMarkers,
                 bar3_max: formation.health,
                 showplayers_bar3: true,
