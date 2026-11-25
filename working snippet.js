@@ -5,7 +5,7 @@ const FireBarrage = () => {
     let artUnits = barrageInfo.artUnitsIDs.map(id => Units[id]);
     let templates = barrageInfo.templateIDs.map(id => Units[id]);
     let available = 0;
-
+    let indirect = false;
     SetupCard("Barrage","",artFormation.faction);
 
 
@@ -28,6 +28,7 @@ const FireBarrage = () => {
             } else {
                 if (distance >= 12 && distance <= artUnit.barrageRange * 2) {
                     available++;
+                    indirect = true;
                     break;
                 }
             }
@@ -67,8 +68,7 @@ const FireBarrage = () => {
         a.formationID - b.formationID
     );
 
-//////Crossfire
-
+    
 
 
 
@@ -78,6 +78,9 @@ const FireBarrage = () => {
     let currentFormID = targetUnits[0].formationID;
     let formLeader = Formations[currentFormID.leaderID];
     formLeader.AddBM(1 + extraBM);
+
+//crossfire for this formation
+
     for (let i=0;i<targetUnits.length;i++) {
         let unit = targetUnits[i];
         if (unit.formationID !== currentFormID) {
@@ -87,6 +90,7 @@ const FireBarrage = () => {
             currentFormID = unit.formationID;
             formLeader = Formations[currentFormID.leaderID];
             formLeader.AddBM(1 + extraBM);
+//check crossfire for new formation
         }
         if (unit.type === "Infantry" || unit.type === "Light Vehicle") {
             needed = AP;
