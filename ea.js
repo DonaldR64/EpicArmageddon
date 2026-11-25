@@ -564,7 +564,7 @@ const EA = (() => {
 
                 let wfp = attributes["weapon" + i + "fp"] || " ";
                 if (wfp.includes("BP")) {
-                    barrageRange = wrange;
+                    barrageRange = parseInt(wrange);
                 }
                 let wtraits = attributes["weapon" + i + "traits"] || " ";
                 let wfx = attributes["weapon" + i + "fx"] || " ";
