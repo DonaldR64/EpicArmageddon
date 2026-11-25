@@ -32,7 +32,6 @@ const FireBarrage = () => {
     }
 
 ///MW 
-///Orbital Bombardment
 
     //available is # of units that fire, extraBM is on top of auto 1, AT and AP are the toHit #s needed
     let totalBP = available * artWeapon.fp.replace(/[^\d]/g,"");
@@ -64,7 +63,7 @@ const FireBarrage = () => {
         a.formationID - b.formationID
     );
 
-    
+
 
 
     //roll hits, apply damage (damage in class Unit)
