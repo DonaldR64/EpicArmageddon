@@ -6,6 +6,9 @@ const FireBarrage = () => {
     let templates = barrageInfo.templateIDs.map(id => Units[id]);
     let available = 0;
 
+    SetupCard("Barrage","",artFormation.faction);
+
+
     //run through artUnits, check that have LOS/Range or Indirect, add up BP
     //if has LOS or Range to any 1 template is good
     artLoop1:
@@ -31,7 +34,6 @@ const FireBarrage = () => {
         }
     }
 
-///MW 
 
     //available is # of units that fire, extraBM is on top of auto 1, AT and AP are the toHit #s needed
     let totalBP = available * artWeapon.fp.replace(/[^\d]/g,"");
@@ -44,8 +46,8 @@ const FireBarrage = () => {
     if (totalBP === 2) {AP = 5};
     if (totalBP > 2) {AP = 4; AT = 5};
 
-    //create array of targets under all templates, group by formation
-    let targetUnits = [];
+    //create array of targets under all templates, remove duplicates, group by formation
+    let targetIDs = [];
     let rad = 1;
     if (artWeapon.name === "Orbital Bombardment") {radius = 2};
     _.each(templates,template => {
@@ -54,17 +56,77 @@ const FireBarrage = () => {
             let ids = HexMap[cube.label()].tokenIDs;
             _.each(ids,id => {
                 if (id !== template.id) {
-                    targetUnits.push(Units[id]);
+                    targetIDs.push(id);
                 }
             })
         })
     })
+    targetIDs = [...new Set(targetIDs)];
+    let targetUnits = targetIDs.map(id => Units[id]);
     targetUnits.sort((a,b) => 
         a.formationID - b.formationID
     );
 
-    //roll hits, apply damage (damage in class Unit)
+//////Crossfire
 
+
+
+
+
+    //roll hits, apply damage (damage in class Unit)
+    //modify to hit by cover, action (sustained, marshal etc), Ignore Cover,
+    let currentFormID = targetUnits[0].formationID;
+    let formLeader = Formations[currentFormID.leaderID];
+    formLeader.AddBM(1 + extraBM);
+    for (let i=0;i<targetUnits.length;i++) {
+        let unit = targetUnits[i];
+        if (unit.formationID !== currentFormID) {
+//check formation for breaking
+
+            outputCard.body.push("[hr]");
+            currentFormID = unit.formationID;
+            formLeader = Formations[currentFormID.leaderID];
+            formLeader.AddBM(1 + extraBM);
+        }
+        if (unit.type === "Infantry" || unit.type === "Light Vehicle") {
+            needed = AP;
+        } else {
+            needed = AT;
+        }
+        let tip = "Base: " + needed + "+";
+        if (artFormation.action === "Sustained Fire") {
+            needed--;
+            tip += "<br>Sustained Fire +1";
+        }
+        if (artFormation.action === "Marshal" || artFormation.action === "Double") {
+            needed++;
+            tip += "<br>" + artFormation.action + " -1";
+        }
+        let cover = false;
+        if (unit.type === "Infantry") {cover = HexMap[unit.hexLabel].cover.Infantry};
+        if (unit.type === "Infantry" && Formations[unit.formationID].action === "Overwatch") {
+            cover = true;
+        }
+        if (unit.type.includes("Vehicle")) {cover = HexMap[unit.hexLabel].cover.Vehicle};
+        if (cover !== false) {
+            if (artWeapon.traits.includes("Ignore Cover")) {
+                tip += "<br>Ignores Cover";
+            } else {
+                needed++;
+                tip += "<br>Cover -1";
+            }
+        }
+        
+
+
+
+
+
+
+
+
+
+    }
 
 
 
