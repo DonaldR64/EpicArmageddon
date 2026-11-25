@@ -102,9 +102,13 @@ const FireBarrage = () => {
             needed++;
             tip += "<br>" + artFormation.action + " -1";
         }
-        let cover = false;
+//only if Direct does losResult cover need to be checked otherwise just the hex
+
+        let cover = losResult.cover; 
         if (unit.type === "Infantry") {cover = HexMap[unit.hexLabel].cover.Infantry};
         if (unit.type === "Infantry" && Formations[unit.formationID].action === "Overwatch") {
+
+//change to the aura
             cover = true;
         }
         if (unit.type.includes("Vehicle")) {cover = HexMap[unit.hexLabel].cover.Vehicle};
@@ -116,7 +120,7 @@ const FireBarrage = () => {
                 tip += "<br>Cover -1";
             }
         }
-        
+
 
 
 
