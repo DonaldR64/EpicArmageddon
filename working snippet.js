@@ -63,9 +63,6 @@ const FireBarrage = () => {
         a.formationID - b.formationID
     );
 
-
-
-
     //roll hits, apply damage (damage in class Unit)
 
 
