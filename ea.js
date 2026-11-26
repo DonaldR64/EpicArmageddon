@@ -1850,7 +1850,7 @@ log(shooter.name)
             errorMsg.push("Formation not in Coherency, cannot take a " + action + " action");
         }
 
-        if (leaderUnit.Broken()) {
+        if (formation.Broken()) {
             errorMsg.push("Formation is Broken and Cannot Activate");
         }
 
