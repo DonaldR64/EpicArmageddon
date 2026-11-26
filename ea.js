@@ -101,7 +101,7 @@ const EA = (() => {
             "borderStyle": "5px ridge",
         },
         "Steel Legion": {
-            "image": "https://files.d20.io/images/508645884/trS7e05gdUJoGR7ofT86gQ/thumb.png?1795731647",
+            "image": "https://files.d20.io/images/508648559/jft4L4iL8aYdKMWVK4JgvA/thumb.png?1795734476",
             "dice": "IG",
             "backgroundColour": "#ffffff",
             "titlefont": "Arial",
