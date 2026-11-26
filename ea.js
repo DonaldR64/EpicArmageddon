@@ -208,7 +208,22 @@ const EA = (() => {
     }
    
  
-  
+    //polygon / line collisions where typically pt1 is shooter and pt2 is target
+    const polyLine = (polygon,pt1,pt2) => {
+        let vertices = polygon.vertices;
+        let len = (vertices.length - 1);
+        let crossings = [];
+        //go through each vertices, plus the next to create a line for checking intersection
+        for (v=0;v<len;v++) {
+            let pt3 = vertices[v];
+            let pt4 = vertices[v+1];
+            let point = lineLine(pt1,pt2,pt3,pt4);
+            if (point) {
+                crossings.push(point);
+            }
+        }
+        return crossings;
+    }
 
 
 
