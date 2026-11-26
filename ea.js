@@ -834,21 +834,75 @@ const EA = (() => {
             return points;
         }
 
-        Polygon() {
+        PolygonLabels() {
+            //labels of hexes within the polygon made by this formation
+            //start with vertices of the polygon, then find hexes within the polygon
+            let vertices;
             let points = this.Points();
-            if (points.length < 3) {return [...points]};
-            let centroid = this.Centroid();
-            let polygon = [...points].sort((a, b) => {
-                const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
-                const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
-                if (angleA !== angleB) {return angleA - angleB};
-                // Tie-breaker: closer point comes first
-                const distA = (a.x - centroid.x) ** 2 + (a.y - centroid.y) ** 2;
-                const distB = (b.x - centroid.x) ** 2 + (b.y - centroid.y) ** 2;
-                return distA - distB;
-            });
-            return polygon;
+            let leader = Units[this.leaderID];
+            if (points.length === 1 && leader.type === "War Engine") {
+                let cubes = HexMap[leader.hexLabel].cube.neighbours();
+                vertices = cubes.map(cube => cube.toPoint());
+            } else if (points.length < 3) {
+                vertices = [...points];
+            } else {
+                let centroid = this.Centroid();
+                vertices = [...points].sort((a, b) => {
+                    const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
+                    const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+                    if (angleA !== angleB) {return angleA - angleB};
+                    // Tie-breaker: closer point comes first
+                    const distA = (a.x - centroid.x) ** 2 + (a.y - centroid.y) ** 2;
+                    const distB = (b.x - centroid.x) ** 2 + (b.y - centroid.y) ** 2;
+                    return distA - distB;
+                });
+            }
+
+log(vertices)
+
+            let labels = [];
+            _.each(HexMap, hex => {
+                let test = pointInPolygon(hex.centre,vertices);
+                if (test) {labels.push(hex.label)};
+            })
+            return labels;
         }
+
+        PolyLabels() {
+            //translate unit centres into cubes, warengines are bigger than their hexlabel
+            let unitCubes = [];
+            _.each(this.unitIDs, unitID => {
+                unitCubes.push(HexMap[Units[unitID].hexLabel].cube);
+            })
+            if (Units[this.unitIDs[0]].type === "War Engine") {
+                unitCubes.concat(unitCubes[0].neighbours());
+            }
+            let polyLabels = [];
+            for (let i=0;i<unitCubes.length;i++) {
+                let cube1 = unitCubes[i];
+                for (let j=0;j<unitCubes.length;j++) {
+                    let cube2 = unitCubes[j];
+                    let interLabels1 = cube1.linedraw(cube2).map(c => c.label());
+                    let interLabels2 = cube1.linedraw2(cube2).map(c => c.label());
+
+                }
+
+
+
+
+            }
+
+
+
+
+
+
+
+
+
+        }
+
+
 
 
 
@@ -2292,13 +2346,11 @@ log(shooter.name)
         outputCard.body.push("Health: " + formation.health);
         outputCard.body.push("Starting Health: " + formation.startingHealth); 
         let centroid = formation.Centroid();
+        let polyLabels = formation.PolygonLabels();
+        log(polyLabels)
         outputCard.body.push("Centroid: " + centroid.label());
-        let polygon = formation.Polygon();
-        let list = [];
-        _.each(polygon, point => {
-            list.push(point.label());
-        })
-        outputCard.body.push(list.toString());
+
+
         PrintCard();
     }
 

@@ -1,27 +1,26 @@
+const Crossfire = (artUnits,formationID) => {
+    let formation = Formations[formationID];
+    let polyLabels = formation.PolygonLabels();
+    let artPlayer = artUnits[0].player;
+    //find friendly formations to artPlayer
+    //check if in range etc etc
+    //can use linedrawA and B to see if polyLabels has hex in the line
 
 
-const sortPointsIntoPolygon = (points) => {
-  if (points.length < 3) return [...points];
 
-  // 1. Find the centroid (center of mass)
-  const center = points.reduce(
-    (acc, p) => ({ x: acc.x + p.x / points.length, y: acc.y + p.y / points.length }),
-    { x: 0, y: 0 }
-  );
 
-  // 2. Sort by polar angle, breaking ties with squared distance from center
-  return [...points].sort((a, b) => {
-    const angleA = Math.atan2(a.y - center.y, a.x - center.x);
-    const angleB = Math.atan2(b.y - center.y, b.x - center.x);
 
-    if (angleA !== angleB) {
-      return angleA - angleB;
-    }
 
-    // Tie-breaker: closer point comes first
-    const distA = (a.x - center.x) ** 2 + (a.y - center.y) ** 2;
-    const distB = (b.x - center.x) ** 2 + (b.y - center.y) ** 2;
-    return distA - distB;
-  });
-  
+
+
+
+
+
+
+
+
 }
+
+
+
+

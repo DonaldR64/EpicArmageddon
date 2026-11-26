@@ -78,8 +78,16 @@ const FireBarrage = () => {
     let currentFormID = targetUnits[0].formationID;
     let formLeader = Formations[currentFormID.leaderID];
     formLeader.AddBM(1 + extraBM);
+    let crossfire = false;
+    //crossfire for this formation
+    if (indirect === false && artWeapon.name.includes("Orbital") === false) {
+        crossfire = Crossfire(artUnits,currentFormID);
+    }
 
-//crossfire for this formation
+
+log(crossfire)
+
+
 
     for (let i=0;i<targetUnits.length;i++) {
         let unit = targetUnits[i];
@@ -90,7 +98,10 @@ const FireBarrage = () => {
             currentFormID = unit.formationID;
             formLeader = Formations[currentFormID.leaderID];
             formLeader.AddBM(1 + extraBM);
-//check crossfire for new formation
+            //crossfire for new formation
+            if (indirect === false && artWeapon.name.includes("Orbital") === false) {
+                crossfire = Crossfire(artUnits,currentFormID);
+            }
         }
         if (unit.type === "Infantry" || unit.type === "Light Vehicle") {
             needed = AP;
