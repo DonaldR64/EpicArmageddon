@@ -2212,6 +2212,7 @@ log(shooter.name)
             cover: cover,
             obscured: obscured,
             arcs: arcs,
+            interLabels: [...new Set([...shooterHex.cube.linedraw(targetHex.cube), ...shooterHex.cube.linedraw2(targetHex.cube)])],
         }
         return result;
     }
@@ -2286,6 +2287,55 @@ log(shooter.name)
 
 
         return info;
+    }
+
+    const Crossfire = (artFormationID,targetFormationID) => {
+        let startTime = Date.now();
+        let targetFormation = Formations[targetFormationID];
+        let polyLabels = targetFormation.PolygonLabels();
+        let artFormation = Formations[artFormationID];
+        //find friendly formations to artPlayer
+        //check if in range etc etc
+        //can use linedrawA and B to see if polyLabels has hex in the line
+
+        let crossfire = false;
+        let formKeys = Object.keys(Formations);
+        crossLoop1:
+        for (let i=0;i<formKeys.length;i++) {
+            let formationID = formKeys[i];
+            if (formationID === artFormationID || formationID === targetFormationID) {
+                continue;
+            }
+            let formation2 = Formations[formationID];
+            if (formation2.player !== artFormation.player) {continue};
+            if (formation2.action === "March") {continue};
+            let leader = Units[formation2.leaderID];
+            if (leader.Broken()) {continue};
+            for (let j=0;j<artFormation.unitIDs.length;j++) {
+                let unit1 = Units[artFormation.unitIDs[j]];
+                for (let k=0;k<formation2.unitIDs.length;k++) {
+                    let unit2 = Units[formation2.unitIDs[k]];
+                    let distance = unit1.Distance(unit2);
+                    if (distance > 18) {continue};
+                    let losResult;
+                    for (let k=0;k<targetFormation.unitIDs.length;k++) {
+                        let unit3 = Units[targetFormation.unitIDs[k]];
+                        let losResult3 = LOS(unit2,unit3);
+                        if (losResult3.los) {
+                            losResult = losResult3;
+                            break;
+                        }
+                    }
+                    if (losResult.los && findCommonElements(losResult.interLabels,polyLabels)) {
+                        crossfire = true;
+                        break crossLoop1;
+                    }
+                }
+            }
+        }
+        let elapsed = Date.now()-startTime;
+        log("Crossfire: " + elapsed/1000 + " seconds");
+        return crossfire;
     }
 
 

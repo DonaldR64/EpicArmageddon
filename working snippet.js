@@ -81,7 +81,7 @@ const FireBarrage = () => {
     let crossfire = false;
     //crossfire for this formation
     if (indirect === false && artWeapon.name.includes("Orbital") === false) {
-        crossfire = Crossfire(artUnits,currentFormID);
+        crossfire = Crossfire(artFormation.id,currentFormID);
     }
 
 
@@ -100,7 +100,7 @@ log(crossfire)
             formLeader.AddBM(1 + extraBM);
             //crossfire for new formation
             if (indirect === false && artWeapon.name.includes("Orbital") === false) {
-                crossfire = Crossfire(artUnits,currentFormID);
+                crossfire = Crossfire(artFormation.id,currentFormID);
             }
         }
         if (unit.type === "Infantry" || unit.type === "Light Vehicle") {
