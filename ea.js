@@ -720,6 +720,7 @@ const EA = (() => {
     class Formation {
         constructor(id,player = 2) {
             this.id = id;
+            this.name = "";
             this.player = player;
             this.unitIDs = [];
             this.leaderID = "";
@@ -1389,6 +1390,7 @@ const EA = (() => {
                     formation = new Formation(formationID);
                     formation.startingHealth = info.startingHealth;
                     formation.player = info.player;
+                    formation.name = info.name;
                 }
                 let unit = new Unit(token.id);
                 let leader = unit.token.get("bar3_max") > 0 ? true:false;
@@ -2025,7 +2027,6 @@ log(shooter.name)
         let shooterCentroid = shooterFormation.Centroid();
         let targetCentroid = targetFormation.Centroid();
 
-
         SetupCard("LOS Check","",unit1.faction);
 
         let keys = Object.keys(info.shooterInfo);
@@ -2044,6 +2045,11 @@ log(shooter.name)
             }
             outputCard.body.push(res);
             DrawLine(HexMap[shooterCentroid].centre, HexMap[targetCentroid].centre, colour, "LOS");
+
+            let crossfire = Crossfire(shooterFormation.id,targetFormation.id);
+            if (crossfire) {
+                outputCard.body.push("Fire may Benefit from Crossfire");
+            }
         }
         PrintCard();
         let elapsed = Date.now()-startTime;
@@ -2205,6 +2211,11 @@ log(shooter.name)
             }
         }
 
+        let interCubes = [...new Set([...shooterHex.cube.linedraw(targetHexes[0].cube), ...shooterHex.cube.linedraw2(targetHexes[0].cube)])];
+        let interLabels = interCubes.map(cube => cube.label());
+
+
+
         let result = {
             distance: distance,
             los: los,
@@ -2212,7 +2223,7 @@ log(shooter.name)
             cover: cover,
             obscured: obscured,
             arcs: arcs,
-            interLabels: [...new Set([...shooterHex.cube.linedraw(targetHex.cube), ...shooterHex.cube.linedraw2(targetHex.cube)])],
+            interLabels: interLabels,
         }
         return result;
     }
@@ -2284,38 +2295,42 @@ log(shooter.name)
             }
         }
 
-
-
         return info;
     }
 
-    const Crossfire = (artFormationID,targetFormationID) => {
+    const Crossfire = (shooterFormationID,targetFormationID) => {
         let startTime = Date.now();
         let targetFormation = Formations[targetFormationID];
-        let polyLabels = targetFormation.PolygonLabels();
-        let artFormation = Formations[artFormationID];
-        //find friendly formations to artPlayer
+        let polyLabels = targetFormation.PolyLabels();
+        let shooterFormation = Formations[shooterFormationID];
+        //find friendly formations to shooterFormation
         //check if in range etc etc
         //can use linedrawA and B to see if polyLabels has hex in the line
+log("Shooters: " + shooterFormation.name)
+log("Targets: " + targetFormation.name)
+
 
         let crossfire = false;
         let formKeys = Object.keys(Formations);
         crossLoop1:
         for (let i=0;i<formKeys.length;i++) {
             let formationID = formKeys[i];
-            if (formationID === artFormationID || formationID === targetFormationID) {
+            if (formationID === shooterFormationID || formationID === targetFormationID) {
                 continue;
             }
             let formation2 = Formations[formationID];
-            if (formation2.player !== artFormation.player) {continue};
+            if (formation2.player !== shooterFormation.player) {continue};
+log("Formation2: " + formation2.name)
+
             if (formation2.action === "March") {continue};
             let leader = Units[formation2.leaderID];
             if (leader.Broken()) {continue};
-            for (let j=0;j<artFormation.unitIDs.length;j++) {
-                let unit1 = Units[artFormation.unitIDs[j]];
+            for (let j=0;j<shooterFormation.unitIDs.length;j++) {
+                let unit1 = Units[shooterFormation.unitIDs[j]];
                 for (let k=0;k<formation2.unitIDs.length;k++) {
                     let unit2 = Units[formation2.unitIDs[k]];
                     let distance = unit1.Distance(unit2);
+log(unit2.name +": " + distance)
                     if (distance > 18) {continue};
                     let losResult;
                     for (let k=0;k<targetFormation.unitIDs.length;k++) {
@@ -2326,6 +2341,8 @@ log(shooter.name)
                             break;
                         }
                     }
+log(losResult.los)
+log(losResult)
                     if (losResult.los && findCommonElements(losResult.interLabels,polyLabels)) {
                         crossfire = true;
                         break crossLoop1;
@@ -2345,15 +2362,13 @@ log(shooter.name)
         let unit = Units[id];
         if (!unit) {return};
         let formation = Formations[unit.formationID];
-        SetupCard("Formation Info","","Neutral");
+        SetupCard(formation.name,"Formation Info","Neutral");
         outputCard.body.push("Player: " + formation.player);
         outputCard.body.push("Health: " + formation.health);
         outputCard.body.push("Starting Health: " + formation.startingHealth); 
         let polyLabels = formation.PolyLabels();
         log(polyLabels)
         outputCard.body.push("Centroid: " + formation.Centroid());
-
-
         PrintCard();
     }
 
@@ -2457,9 +2472,12 @@ log(shooter.name)
 
     const CreateFormation = (msg) => {
         if (!msg.selected) {return};
+        let Tag = msg.content.split(";");
+        let player = parseInt(Tag[1]);    
+        let formName = Tag[2];
         let formationID = stringGen();
-        let player = parseInt(msg.content.split(";")[1]);    
         let formation = new Formation(formationID,player);
+        formation.name = formName;
         let nameList = {};
         if (state.EA.formations[player] === 0) {
             let fm = [...FormationMarkers];
@@ -2534,6 +2552,7 @@ log(shooter.name)
             startingHealth: formation.health,
             marker: marker,
             player: player,
+            name: formName,
         }
         state.EA.formations[player]++;
         let faction = Units[formation.unitIDs[0]].faction;
