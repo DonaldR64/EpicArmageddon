@@ -819,7 +819,7 @@ const EA = (() => {
         Centroid() {
             let points = this.Points();
             let centroid = points.reduce((acc, p) => ({ x: acc.x + p.x / points.length, y: acc.y + p.y / points.length }),{ x: 0, y: 0 });
-            return new Point(centroid.x, centroid.y);
+            return new Point(centroid.x, centroid.y).label();
         }
 
         Points() {
@@ -834,40 +834,6 @@ const EA = (() => {
             return points;
         }
 
-        PolygonLabels() {
-            //labels of hexes within the polygon made by this formation
-            //start with vertices of the polygon, then find hexes within the polygon
-            let vertices;
-            let points = this.Points();
-            let leader = Units[this.leaderID];
-            if (points.length === 1 && leader.type === "War Engine") {
-                let cubes = HexMap[leader.hexLabel].cube.neighbours();
-                vertices = cubes.map(cube => cube.toPoint());
-            } else if (points.length < 3) {
-                vertices = [...points];
-            } else {
-                let centroid = this.Centroid();
-                vertices = [...points].sort((a, b) => {
-                    const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
-                    const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
-                    if (angleA !== angleB) {return angleA - angleB};
-                    // Tie-breaker: closer point comes first
-                    const distA = (a.x - centroid.x) ** 2 + (a.y - centroid.y) ** 2;
-                    const distB = (b.x - centroid.x) ** 2 + (b.y - centroid.y) ** 2;
-                    return distA - distB;
-                });
-            }
-
-log(vertices)
-
-            let labels = [];
-            _.each(HexMap, hex => {
-                let test = pointInPolygon(hex.centre,vertices);
-                if (test) {labels.push(hex.label)};
-            })
-            return labels;
-        }
-
         PolyLabels() {
             //translate unit centres into cubes, warengines are bigger than their hexlabel
             let unitCubes = [];
@@ -877,29 +843,17 @@ log(vertices)
             if (Units[this.unitIDs[0]].type === "War Engine") {
                 unitCubes.concat(unitCubes[0].neighbours());
             }
-            let polyLabels = [];
+            let polyLabels = unitCubes.map(cube => cube.label());
             for (let i=0;i<unitCubes.length;i++) {
                 let cube1 = unitCubes[i];
                 for (let j=0;j<unitCubes.length;j++) {
                     let cube2 = unitCubes[j];
-                    let interLabels1 = cube1.linedraw(cube2).map(c => c.label());
-                    let interLabels2 = cube1.linedraw2(cube2).map(c => c.label());
-
+                    polyLabels.push(...cube1.linedraw(cube2).map(c => c.label()));
+                    polyLabels.push(...cube1.linedraw2(cube2).map(c => c.label()));
                 }
-
-
-
-
             }
-
-
-
-
-
-
-
-
-
+            polyLabels = [...new Set(polyLabels)].sort();
+            return polyLabels;
         }
 
 
@@ -2068,8 +2022,8 @@ log(shooter.name)
 
         let info = FormationLOS(shooterFormation,targetFormation);
 
-        let shooterCentroid = shooterFormation.Centroid().label();
-        let targetCentroid = targetFormation.Centroid().label();
+        let shooterCentroid = shooterFormation.Centroid();
+        let targetCentroid = targetFormation.Centroid();
 
 
         SetupCard("LOS Check","",unit1.faction);
@@ -2345,10 +2299,9 @@ log(shooter.name)
         outputCard.body.push("Player: " + formation.player);
         outputCard.body.push("Health: " + formation.health);
         outputCard.body.push("Starting Health: " + formation.startingHealth); 
-        let centroid = formation.Centroid();
-        let polyLabels = formation.PolygonLabels();
+        let polyLabels = formation.PolyLabels();
         log(polyLabels)
-        outputCard.body.push("Centroid: " + centroid.label());
+        outputCard.body.push("Centroid: " + formation.Centroid());
 
 
         PrintCard();
