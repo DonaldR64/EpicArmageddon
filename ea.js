@@ -782,7 +782,7 @@ const EA = (() => {
             let leader = Units[this.leaderID];
             leader.token.set({
                 bar3_value: 0,
-                aura1_color: "#ff0000";
+                aura1_color: "#ff0000",
             })
         }
 
@@ -2844,7 +2844,7 @@ const FireBarrage = () => {
             //Damage - get result back as either Saved or Destroyed or Damaged
             //go = tip + ": " + damageresult as its own tip
             let status = unit.Damage(artWeapon);
-            
+
 
         }
 
