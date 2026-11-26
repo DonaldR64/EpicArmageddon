@@ -101,7 +101,7 @@ const EA = (() => {
             "borderStyle": "5px ridge",
         },
         "Steel Legion": {
-            "image": "https://files.d20.io/images/508648559/jft4L4iL8aYdKMWVK4JgvA/thumb.png?1795734476",
+            "image": "https://files.d20.io/images/508648680/EUk1iSrBLuvC2W4Rh_UE0A/thumb.png?1795734625",
             "dice": "IG",
             "backgroundColour": "#ffffff",
             "titlefont": "Arial",
@@ -1625,7 +1625,7 @@ const EA = (() => {
             }
         })
 
-        //creates barrage template(s) and datat related to it
+        //creates barrage template(s) and data related to it
         let shooterID = msg.selected[0]._id;
         let shooter = Units[shooterID];
 log(shooter.name)
