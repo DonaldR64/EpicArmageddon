@@ -2714,11 +2714,11 @@ const FireBarrage = () => {
     let barrageInfo = state.EA.currentBarrage;
     let artFormation = Formations[barrageInfo.formationID];
     let artWeapon = barrageInfo.artWeapon;
-    let artUnits = barrageInfo.artUnitsIDs.map(id => Units[id]);
+    let artUnits = barrageInfo.artUnitIDs.map(id => Units[id]);
     let templates = barrageInfo.templateIDs.map(id => Units[id]);
     let available = 0;
     let indirect = false;
-    SetupCard("Barrage",artFormation.name,artFormation.faction);
+    SetupCard(artFormation.name,"",artFormation.faction);
 
 
     //run through artUnits, check that have LOS/Range or Indirect, add up BP
@@ -2761,6 +2761,7 @@ const FireBarrage = () => {
     let AP = 6, AT = 6;
     if (totalBP === 2) {AP = 5};
     if (totalBP > 2) {AP = 4; AT = 5};
+    outputCard.subtitle = "BP: " + totalBP;
 
     //create array of targets under all templates, remove duplicates, group by formation
     let targetIDs = [];
@@ -2786,7 +2787,8 @@ const FireBarrage = () => {
     //roll hits, apply damage (damage in class Unit)
     //modify to hit by cover, action (sustained, marshal etc), Ignore Cover,
     let currentFormID = targetUnits[0].formationID;
-    let formLeader = Formations[currentFormID.leaderID];
+    let formLeader = Units[Formations[currentFormID].leaderID];
+
     formLeader.AddBM(1 + extraBM);
     let crossfire = false;
     //crossfire for this formation
