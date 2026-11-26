@@ -2843,8 +2843,8 @@ const FireBarrage = () => {
             tip = '[Hit](#" class="showtip" title="' + tip + ')';
             //Damage - get result back as either Saved or Destroyed or Damaged
             //go = tip + ": " + damageresult as its own tip
-
-
+            let status = unit.Damage(artWeapon);
+            
 
         }
 
