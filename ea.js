@@ -2850,7 +2850,7 @@ const FireBarrage = () => {
         } else {
             tip = '[Hit](#" class="showtip" title="' + tip + ')';
             outputCard.body.push(unit.name + ": " + tip);
-
+            //Damage
         }
 
 
