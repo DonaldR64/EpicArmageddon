@@ -2849,8 +2849,11 @@ const FireBarrage = () => {
             outputCard.body.push(unit.name + ": " + tip);
         } else {
             tip = '[Hit](#" class="showtip" title="' + tip + ')';
-            outputCard.body.push(unit.name + ": " + tip);
-            //Damage
+            //Damage - get result back as either Saved or Destroyed or Damaged
+            //go = tip + ": " + damageresult as its own tip
+
+
+
         }
 
 
