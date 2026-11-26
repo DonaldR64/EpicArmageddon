@@ -1,55 +1,27 @@
-const GroupLOS = (msg) => {
-    let startTime = Date.now();
 
-    let Tag = msg.content.split(";");
-    let unit1 = Units[Tag[1]];
-    let unit2 = Units[Tag[2]];
-    if (!unit1 || !unit2) {
-        sendChat("","Invalid Units")
-        return;
-    }
-    SetupCard("LOS Check","",unit1.faction);
 
-    let shooterFormation = Formations[unit1.formationID];
-    let targetFormation = Formations[unit2.formationID];
-    let obscured = false;
-    let noLOS = true;
+const sortPointsIntoPolygon = (points) => {
+  if (points.length < 3) return [...points];
 
-    for (let i=0;i<shooterFormation.unitIDs.length;i++) {
-        let shooter = shooterFormation.unitIDs[i];
-        let targetIDArray = [];
+  // 1. Find the centroid (center of mass)
+  const center = points.reduce(
+    (acc, p) => ({ x: acc.x + p.x / points.length, y: acc.y + p.y / points.length }),
+    { x: 0, y: 0 }
+  );
 
-        for (let j=0;j<targetFormation.unitIDs.length;j++) {
-            let target = targetFormation.unitIDs[j];
-            let losResult = LOS(shooter,target);
-            if (losResult.los === false) {
-                continue;
-            }
-            noLOS = false;
-            if (losResult.obscured) {
-                obscured = true;
-            }
-            targetIDArray.push({
-                id: target.id,
-                range: losResult.distance,
-                obsscured: losResult.obscured,
-                cover: losResult.cover,
-            })
-        }
-        shooter.targetIDArray = targetIDArray;
-        outputCard.body.push(shooter.name + ": " + targetIDArray.length + " Targets");
+  // 2. Sort by polar angle, breaking ties with squared distance from center
+  return [...points].sort((a, b) => {
+    const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+    const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+
+    if (angleA !== angleB) {
+      return angleA - angleB;
     }
 
-    if (noLOS === true) {
-        outputCard.body.push("No LOS To Any in Target Formation");
-    } else {
-        if (obscured === true) {
-            outputCard.body.push("Some of the Targets are Obscured/In Cover");
-        }
-    }
-
-    PrintCard();
-
-    let elapsed = Date.now()-startTime;
-    log("Check LOS " + elapsed/1000 + " seconds");
+    // Tie-breaker: closer point comes first
+    const distA = (a.x - center.x) ** 2 + (a.y - center.y) ** 2;
+    const distB = (b.x - center.x) ** 2 + (b.y - center.y) ** 2;
+    return distA - distB;
+  });
+  
 }

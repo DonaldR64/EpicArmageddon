@@ -803,21 +803,38 @@ const EA = (() => {
         }
 
         Centroid() {
-            let xTotal = 0;
-            let yTotal = 0;
+            let points = this.Points();
+            let centroid = points.reduce((acc, p) => ({ x: acc.x + p.x / points.length, y: acc.y + p.y / points.length }),{ x: 0, y: 0 });
+            return new Point(centroid.x, centroid.y);
+        }
+
+        Points() {
+            let points = [];
             let len = this.unitIDs.length;
             for (let i=0;i<len;i++) {
                 let unit = Units[this.unitIDs[i]];
                 if (unit) {
-                    xTotal += HexMap[unit.hexLabel].centre.x;
-                    yTotal += HexMap[unit.hexLabel].centre.y;
+                    points.push(HexMap[unit.hexLabel].centre);
                 }
             }
-            let centroidPoint = new Point((xTotal/len),(yTotal/len));
-            let centroid = centroidPoint.label();
-            return centroid;
+            return points;
         }
 
+        Polygon() {
+            let points = this.Points();
+            if (points.length < 3) {return [...points]};
+            let centroid = this.Centroid();
+            let polygon = [...points].sort((a, b) => {
+                const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
+                const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+                if (angleA !== angleB) {return angleA - angleB};
+                // Tie-breaker: closer point comes first
+                const distA = (a.x - centroid.x) ** 2 + (a.y - centroid.y) ** 2;
+                const distB = (b.x - centroid.x) ** 2 + (b.y - centroid.y) ** 2;
+                return distA - distB;
+            });
+            return polygon;
+        }
 
 
 
@@ -1983,8 +2000,8 @@ log(shooter.name)
 
         let info = FormationLOS(shooterFormation,targetFormation);
 
-        let shooterCentroid = shooterFormation.Centroid();
-        let targetCentroid = targetFormation.Centroid();
+        let shooterCentroid = shooterFormation.Centroid().label();
+        let targetCentroid = targetFormation.Centroid().label();
 
 
         SetupCard("LOS Check","",unit1.faction);
@@ -2260,7 +2277,14 @@ log(shooter.name)
         outputCard.body.push("Player: " + formation.player);
         outputCard.body.push("Health: " + formation.health);
         outputCard.body.push("Starting Health: " + formation.startingHealth); 
-        outputCard.body.push("Centroid: " + formation.Centroid());
+        let centroid = formation.Centroid();
+        outputCard.body.push("Centroid: " + centroid.label());
+        let polygon = formation.Polygon();
+        let list = [];
+        _.each(polygon, point => {
+            list.push(point.label());
+        })
+        outputCard.body.push(list.toString());
         PrintCard();
     }
 
