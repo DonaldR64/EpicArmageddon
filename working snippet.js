@@ -6,11 +6,12 @@ const FireBarrage = () => {
     let templates = barrageInfo.templateIDs.map(id => Units[id]);
     let available = 0;
     let indirect = false;
-    SetupCard("Barrage","",artFormation.faction);
+    SetupCard("Barrage",artFormation.name,artFormation.faction);
 
 
     //run through artUnits, check that have LOS/Range or Indirect, add up BP
     //if has LOS or Range to any 1 template is good
+
     artLoop1:
     for (let i=0;i<artUnits.length;i++) {
         let artUnit = artUnits[i];
@@ -19,18 +20,20 @@ const FireBarrage = () => {
             let template = templates[j];
             let losResult = LOS(artUnit,template);
             let distance = losResult.distance;
-
             if (losResult.los) {
-                if ((distance <= artUnit.barrageRange) || (distance >= 12 && distance <= artUnit.barrageRange * 2)) {
+                if (distance <= artUnit.barrageRange) {
                     available++;
                     break;
                 }
-            } else {
                 if (distance >= 12 && distance <= artUnit.barrageRange * 2) {
-                    available++;
                     indirect = true;
+                    available++;
                     break;
                 }
+            } else if (distance >= 12 && distance <= artUnit.barrageRange * 2) {
+                available++;
+                indirect = true;
+                break;
             }
         }
     }
@@ -68,11 +71,6 @@ const FireBarrage = () => {
         a.formationID - b.formationID
     );
 
-    
-
-
-
-
     //roll hits, apply damage (damage in class Unit)
     //modify to hit by cover, action (sustained, marshal etc), Ignore Cover,
     let currentFormID = targetUnits[0].formationID;
@@ -83,11 +81,6 @@ const FireBarrage = () => {
     if (indirect === false && artWeapon.name.includes("Orbital") === false) {
         crossfire = Crossfire(artFormation.id,currentFormID);
     }
-
-
-log(crossfire)
-
-
 
     for (let i=0;i<targetUnits.length;i++) {
         let unit = targetUnits[i];
@@ -108,7 +101,7 @@ log(crossfire)
         } else {
             needed = AT;
         }
-        let tip = "Base: " + needed + "+";
+        let tip = "<br>Base: " + needed + "+";
         if (artFormation.action === "Sustained Fire") {
             needed--;
             tip += "<br>Sustained Fire +1";
@@ -117,16 +110,14 @@ log(crossfire)
             needed++;
             tip += "<br>" + artFormation.action + " -1";
         }
-//only if Direct does losResult cover need to be checked otherwise just the hex
 
-        let cover = losResult.cover; 
+        let cover = false; 
         if (unit.type === "Infantry") {cover = HexMap[unit.hexLabel].cover.Infantry};
-        if (unit.type === "Infantry" && Formations[unit.formationID].action === "Overwatch") {
-
-//change to the aura
-            cover = true;
-        }
         if (unit.type.includes("Vehicle")) {cover = HexMap[unit.hexLabel].cover.Vehicle};
+        if (indirect === false && cover === false) {
+            let losResult = LOS(artUnits[0],unit);
+            cover = losResult.cover;
+        }
         if (cover !== false) {
             if (artWeapon.traits.includes("Ignore Cover")) {
                 tip += "<br>Ignores Cover";
@@ -136,7 +127,17 @@ log(crossfire)
             }
         }
 
+        let artRoll = randomInteger(6);
+        tip = artRoll + " vs. " + needed + "+" + tip;
 
+        if (artRoll < needed) {
+            tip = '[Missed](#" class="showtip" title="' + tip + ')';
+            outputCard.body.push(unit.name + ": " + tip);
+        } else {
+            tip = '[Hit](#" class="showtip" title="' + tip + ')';
+            outputCard.body.push(unit.name + ": " + tip);
+
+        }
 
 
 
@@ -149,7 +150,7 @@ log(crossfire)
 
 
 
-
+    PrintCard();
 
 
 
