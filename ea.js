@@ -666,27 +666,6 @@ const EA = (() => {
             delete Units[this.id];
         }
 
-
-        Broken() {
-            let broken = this.token.get("tint_color") === "#ff0000" ? true:false;
-            return broken;
-        }
-
-        Break() {
-            this.token.set("tint_color","#ff0000");            
-        }
-
-        AddBM(markers) {
-            let bm = parseInt(this.token.get("bar3_value"));
-            let max = parseInt(this.token.get("bar3_max"));
-            bm += markers;
-            if (bm >= max) {
-                Formations[this.formationID].Break();
-            } else {
-                this.token.set("bar3_value",bm);
-            }
-        }
-
         Arc(b) {
             let angle = HexMap[this.hexLabel].cube.angle(HexMap[b.hexLabel].cube);
             angle = Angle(angle - this.token.get("rotation"));
@@ -800,16 +779,35 @@ const EA = (() => {
         }
 
         Break() {
-            _.each(this.unitIDs, unitID => {
-                let unit = Units[unitID];
-                if (unit) {
-                    unit.Break();
-                } else {
-                    this.RemoveUnit(unitID);
-                }
+            let leader = Units[this.leaderID];
+            leader.token.set({
+                bar3_value: 0,
+                aura1_color: "#ff0000";
             })
-            Units[this.leaderID].token.set("bar3_value",0);
         }
+
+        Broken() {
+            let leader = Units[this.leaderID];
+            let broken = leader.token.get("tint_color") === "#ff0000" ? true:false;
+            return broken;
+        }
+
+        AddBM(markers) {
+            if (this.Broken()) {return};
+            let leader = Units[this.leaderID];
+            let bm = parseInt(leader.token.get("bar3_value"));
+            let max = parseInt(leader.token.get("bar3_max"));
+            bm += markers;
+            if (bm >= max) {
+                this.Break();
+            } else {
+                leader.token.set("bar3_value",bm);
+            }
+        }
+
+
+
+
 
         SetOverwatch(over) {
             let leaderUnit = Units[this.leaderID];
@@ -1633,8 +1631,10 @@ log(shooter.name)
         let totalBP = 0;
         let leader = Units[shooterFormation.leaderID];
         let bm = parseInt(leader.token.get("bar3_value"));
-        let artWeapon;
+        let artWeapon = shooter.barrageWeapon;
         let artUnitIDs = [];
+
+//if weapon not saem as selected shooter, skip
 
         _.each(shooterFormation.unitIDs,id => {
             let unit = Units[id];
@@ -1898,9 +1898,9 @@ log(shooter.name)
             }
         } else {
             outputCard.body.push("Failure. The Unit takes a Blast Marker");
-            leaderUnit.AddBM(1);
+            formation.AddBM(1);
             action = "Hold";
-            if (leaderUnit.Broken()) {
+            if (formation.Broken()) {
                 outputCard.body.push("The Formation Breaks");
                 outputCard.body.push("It may make a Withdrawal Move");
             } else {
@@ -2306,10 +2306,6 @@ log(shooter.name)
         //find friendly formations to shooterFormation
         //check if in range etc etc
         //can use linedrawA and B to see if polyLabels has hex in the line
-log("Shooters: " + shooterFormation.name)
-log("Targets: " + targetFormation.name)
-
-
         let crossfire = false;
         let formKeys = Object.keys(Formations);
         crossLoop1:
@@ -2320,8 +2316,6 @@ log("Targets: " + targetFormation.name)
             }
             let formation2 = Formations[formationID];
             if (formation2.player !== shooterFormation.player) {continue};
-log("Formation2: " + formation2.name)
-
             if (formation2.action === "March") {continue};
             let leader = Units[formation2.leaderID];
             if (leader.Broken()) {continue};
@@ -2330,7 +2324,6 @@ log("Formation2: " + formation2.name)
                 for (let k=0;k<formation2.unitIDs.length;k++) {
                     let unit2 = Units[formation2.unitIDs[k]];
                     let distance = unit1.Distance(unit2);
-log(unit2.name +": " + distance)
                     if (distance > 18) {continue};
                     let losResult;
                     for (let k=0;k<targetFormation.unitIDs.length;k++) {
@@ -2341,8 +2334,6 @@ log(unit2.name +": " + distance)
                             break;
                         }
                     }
-log(losResult.los)
-log(losResult)
                     if (losResult.los && findCommonElements(losResult.interLabels,polyLabels)) {
                         crossfire = true;
                         break crossLoop1;
@@ -2786,28 +2777,29 @@ const FireBarrage = () => {
 
     //roll hits, apply damage (damage in class Unit)
     //modify to hit by cover, action (sustained, marshal etc), Ignore Cover,
-    let currentFormID = targetUnits[0].formationID;
-    let formLeader = Units[Formations[currentFormID].leaderID];
-
-    formLeader.AddBM(1 + extraBM);
+    let targetFormation = Formations[targetUnits[0].formationID];
+    let tfStatus = targetFormation.Broken();
+    targetFormation.AddBM(1 + extraBM);
     let crossfire = false;
     //crossfire for this formation
     if (indirect === false && artWeapon.name.includes("Orbital") === false) {
-        crossfire = Crossfire(artFormation.id,currentFormID);
+        crossfire = Crossfire(artFormation.id,targetFormation.id);
     }
 
     for (let i=0;i<targetUnits.length;i++) {
         let unit = targetUnits[i];
-        if (unit.formationID !== currentFormID) {
-//check formation for breaking
-
+        if (unit.formationID !== targetFormation.id) {
+            if (targetFormation.Broken() && tfStatus === false) {
+                //started unbroken, now broken
+                outputCard.body.push(targetFormation.name + " is Broken");
+            }
             outputCard.body.push("[hr]");
-            currentFormID = unit.formationID;
-            formLeader = Formations[currentFormID.leaderID];
-            formLeader.AddBM(1 + extraBM);
+            targetFormation = Formations[targetUnits[0].formationID];
+            tfStatus = targetFormation.Broken();
+            targetFormation.AddBM(1 + extraBM);
             //crossfire for new formation
             if (indirect === false && artWeapon.name.includes("Orbital") === false) {
-                crossfire = Crossfire(artFormation.id,currentFormID);
+                crossfire = Crossfire(artFormation.id,targetFormation.id);
             }
         }
         if (unit.type === "Infantry" || unit.type === "Light Vehicle") {
