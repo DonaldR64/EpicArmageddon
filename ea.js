@@ -2825,6 +2825,9 @@ const FireBarrage = () => {
     targetIDs = [...new Set(targetIDs)];
     let targetUnits = targetIDs.map(id => Units[id]);
     targetUnits.sort((a,b) => 
+        a.Distance(artFormationCentroid) - b.Distance(artFormationCentroid)
+    );
+    targetUnits.sort((a,b) => 
         a.formationID - b.formationID
     );
 
