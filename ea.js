@@ -688,7 +688,16 @@ const EA = (() => {
             return arcs;
         }
 
+        Damage(weapon) {
+            
 
+
+
+
+
+
+
+        }
 
 
 
