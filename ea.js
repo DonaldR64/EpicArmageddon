@@ -552,7 +552,7 @@ const EA = (() => {
 
             let weapons = [];
             let maxRange = 0;
-            let barrageRange = 0;
+            let barrageWeapon;
 
             for (let i=1;i<6;i++) {
                 let equip = attributes["weapon" + i + "equipped"] || "Off";
@@ -578,7 +578,7 @@ const EA = (() => {
 
                 let wfp = attributes["weapon" + i + "fp"] || " ";
                 if (wfp.includes("BP")) {
-                    barrageRange = parseInt(wrange);
+                    barrageWeapon = (i-1);
                 }
                 let wtraits = attributes["weapon" + i + "traits"] || " ";
                 let wfx = attributes["weapon" + i + "fx"] || " ";
@@ -599,7 +599,7 @@ const EA = (() => {
 
             this.weapons = weapons;
             this.maxRange = maxRange;
-            this.barrageRange = barrageRange;
+            this.barrageWeapon = barrageWeapon;
 
             this.name = token.get("name");
             this.id = id;
@@ -689,7 +689,7 @@ const EA = (() => {
         }
 
         Damage(weapon) {
-            
+
 
 
 
@@ -1648,30 +1648,21 @@ log(shooter.name)
         let totalBP = 0;
         let leader = Units[shooterFormation.leaderID];
         let bm = parseInt(leader.token.get("bar3_value"));
-        let artWeapon = shooter.barrageWeapon;
-        let artUnitIDs = [];
+        let artWeapon = shooter.weapons[shooter.barrageWeapon];        
 
-//if weapon not saem as selected shooter, skip
-
-        _.each(shooterFormation.unitIDs,id => {
-            let unit = Units[id];
-            if (unit.barrageRange > 0) {
-                _.each(unit.weapons, weapon => {
-                    if (weapon.fp.includes("BP")) {
-                        if (bm > 0) {
-                            bm--;
-                            //unit is suppressed
-                        } else {
-                            let bp = parseInt(weapon.fp.replace(/[^\d]/g,""));
-                            totalBP += bp;
-                            artWeapon = weapon;
-                            artUnitIDs.push(id);
-                        }
-                    }
-                })
+        for (let i=0;i<shooterFormation.unitIDs.length;i++) {
+            let unit = Units[shooterFormation.unitIDs[i]];
+            if (unit.barrageWeapon) {
+                let weapon = unit.weapons[unit.barrageWeapon];
+                //if not same traits as initial selected, skip
+                if (weapon.traits !== artWeapon.traits) {continue};
+                if (bm > 0) {
+                    bm--;
+                } else {
+                    totalBP += parseInt(weapon.fp.replace(/[^\d]/g,""));
+                }
             }
-
-        })
+        }
         let templates = 1;
         if (totalBP > 3) {templates++};
         if (totalBP > 7) {templates++};
@@ -1688,7 +1679,6 @@ log(shooter.name)
         state.EA.currentBarrage = {
             formationID: shooter.formationID,
             artWeapon: artWeapon,
-            artUnitIDs: artUnitIDs,
             templateIDs: templateIDs,
         }
 
@@ -2385,29 +2375,43 @@ log(shooter.name)
         let barrageID = msg.selected[0]._id;
         let barrageInfo = state.EA.currentBarrage;
         let artFormation = Formations[barrageInfo.formationID];
-        let indirect = barrageInfo.artWeapon.traits.includes("Indirect"); //weapon is capable of indirect fire
+        let artWeapon = barrageInfo.artWeapon;
+        let indirect = artWeapon.traits.includes("Indirect"); //weapon is capable of indirect fire
 
         SetupCard("Check Barrage","",artFormation.faction);
         let barrage = Units[barrageID];
+        //artillery shooters sorted back to front
+        artFormation.unitIDs.sort((a,b) => 
+            Units[b].Distance(barrage) - Units[a].Distance(barrage)
+        )
+        let artLeader = Units[artFormation.leaderID];
+        let blastMarkers = parseInt(artLeader.token.get("bar3_value"));
 
-        let artUnits = barrageInfo.artUnitIDs.map(id => Units[id]);
-
-        for (let i=0;i<artUnits.length;i++) {
-            let artUnit = artUnits[i];
+        for (let i=0;i<artFormation.unitIDs.length;i++) {
+            let artUnit = artFormation.unitIDs[i];
+            if (!artUnit.barrageWeapon) {continue};
+            let weapon = artUnit.weapons[artUnit.barrageWeapon];
+            let range = parseInt(weapon.range);
+            if (weapon.traits !== artWeapon.traits) {continue};
             let losResult = LOS(artUnit,barrage);
-            if (losResult.los && losResult.distance <= artUnit.barrageRange) {
-                outputCard.body.push(artUnit.name + " has Range & LOS");
+
+            if (losResult.los && losResult.distance <= range) {
+                if (blastMarkers > 0) {
+                    blastMarkers--;
+                } else {
+                    outputCard.body.push(artUnit.name + " has Range & LOS for Direct Fire");
+                }
                 continue;
             }
             if (losResult.los === false && indirect === false) {
                 outputCard.body.push(artUnit.name + " has no LOS");
                 continue;
             }
-            if (losResult.distance > artUnit.barrageRange && indirect === false) {
+            if (losResult.distance > range && indirect === false) {
                 outputCard.body.push(artUnit.name + " lacks the Range");
                 continue;
             }
-            if (losResult.distance > (artUnit.barrageRange * 2) && indirect) {
+            if (losResult.distance > (range*2) && indirect) {
                 outputCard.body.push(artUnit.name + " lacks the Range");
                 continue;
             }
@@ -2420,7 +2424,11 @@ log(shooter.name)
                 outputCard.body.push("This Formation is not on Sustained Fire and cannot fire Indirectly");
                 break;
             }
-            outputCard.body.push(artUnit.name + " has Range & Indirect");
+            if (blastMarkers > 0) {
+                blastMarkers--;
+            } else {
+                outputCard.body.push(artUnit.name + " has Range for Indirect Fire");
+            }
         }
         PrintCard();
     }
@@ -2721,43 +2729,58 @@ log(shooter.name)
 const FireBarrage = () => {
     let barrageInfo = state.EA.currentBarrage;
     let artFormation = Formations[barrageInfo.formationID];
+    let artFormationCentroid = artFormation.Centroid();
     let artWeapon = barrageInfo.artWeapon;
-    let artUnits = barrageInfo.artUnitIDs.map(id => Units[id]);
+
     let templates = barrageInfo.templateIDs.map(id => Units[id]);
+    //sort templates closest first
+    templates.sort((a,b) => 
+        a.HexDistance(artFormationCentroid) - b.HexDistance(artFormationCentroid)
+    )
+    let firstTemplate = templates[0];
     let available = 0;
     let indirect = false;
     SetupCard(artFormation.name,"",artFormation.faction);
 
+    artFormation.unitIDs.sort((a,b) => 
+        Units[b].Distance(barrage) - Units[a].Distance(barrage)
+    )
+    let artLeader = Units[artFormation.leaderID];
+    let blastMarkers = parseInt(artLeader.token.get("bar3_value"));
 
     //run through artUnits, check that have LOS/Range or Indirect, add up BP
-    //if has LOS or Range to any 1 template is good
-
-    artLoop1:
-    for (let i=0;i<artUnits.length;i++) {
-        let artUnit = artUnits[i];
-
-        for (let j=0;j<templates.length;j++) {
-            let template = templates[j];
-            let losResult = LOS(artUnit,template);
-            let distance = losResult.distance;
-            if (losResult.los) {
-                if (distance <= artUnit.barrageRange) {
+    for (let i=0;i<artFormation.unitIDs.length;i++) {
+        let artUnit = artFormation.unitID[i];
+        if (!artUnit.barrageWeapon) {continue};
+        let weapon = artUnit.weapons[artUnit.barrageWeapon];
+        if (weapon.traits !== artWeapon.traits) {continue};
+        let range = parseInt(weapon.range);
+        let losResult = LOS(artUnit,firstTemplate);
+        let distance = losResult.distance;
+        if (losResult.los) {
+            if (distance <= range) {
+                if (blastMarkers > 0) {
+                    blastMarkers--;
+                } else {
                     available++;
-                    break;
                 }
-                if (distance >= 12 && distance <= artUnit.barrageRange * 2) {
+            } else if (distance >= 12 && distance <= range * 2) {
+                if (blastMarkers > 0) {
+                    blastMarkers--;
+                } else {
                     indirect = true;
                     available++;
-                    break;
                 }
-            } else if (distance >= 12 && distance <= artUnit.barrageRange * 2) {
-                available++;
+            }
+        } else if (distance >= 12 && distance <= range * 2) {
+            if (blastMarkers > 0) {
+                blastMarkers--;
+            } else {
                 indirect = true;
-                break;
+                available++;
             }
         }
     }
-
 
     //available is # of units that fire, extraBM is on top of auto 1, AT and AP are the toHit #s needed
     let totalBP = available * artWeapon.fp.replace(/[^\d]/g,"");
@@ -2862,7 +2885,7 @@ const FireBarrage = () => {
             //Damage - get result back as either Saved or Destroyed or Damaged
             //go = tip + ": " + damageresult as its own tip
             let status = unit.Damage(artWeapon);
-
+            outputCard.body.push(unit.name + ": Hit"); ///temp
 
         }
 
