@@ -535,9 +535,9 @@ const EA = (() => {
             let s1 = attributes.special1 || "";
             let s2 = attributes.special2 || "";
 
-            s0 = s0.split(',').map(e => e.trim());
-            s1 = s1.split(",").map(e => e.trim());
-            s2 = s2.split(",").map(e => e.trim());
+            s0 = s0.replace(":",",").split(',').map(e => e.trim());
+            s1 = s1.replace(":",",").split(",").map(e => e.trim());
+            s2 = s2.replace(":",",").split(",").map(e => e.trim());
             this.special = [].concat(s0,s1,s2);
             this.critical = attributes.criticalhit;
 
@@ -872,7 +872,48 @@ const EA = (() => {
             return polyLabels;
         }
 
+        Regroup() {
+            let leader = Units[this.leaderID];
+            let bm = parseInt(leader.token.get("bar3_value"));
 
+            let roll1 = randomInteger(6);
+            let roll2 = randomInteger(6);
+
+            let highRoll = Math.max(roll1,roll2);
+            let lowRoll = Math.min(roll1,roll2);
+            //leaders, self-reliant
+            let leaders = 0;
+            let selfReliant = 0;
+
+            _.each(this.unitIDs, unitID => {
+                let unit = Units[unitID];
+                if (unit.special.includes("Leader") || unit.special.includes("Supreme Commander")) {
+                    leaders++;
+                }
+                let sr = unit.special.find(e => e.includes("Reliant"));
+                if (sr) {
+                    sr = sr.replace(/[^\d]/g,"") || 1;
+                    selfReliant = Math.max(selfReliant,sr);
+                }
+            })
+            
+            let total = highRoll + leaders + selfReliant;
+            let regroup = Math.min(total,bm);
+            bm -= regroup;
+            let tip = "Rolls: " + highRoll + "/" + lowRoll;
+            if (leaders > 0) {
+                tip += "<br>Leaders: " + leaders;
+            }
+            if (selfReliant > 0) {
+                tip += "<br>Self-Reliant: " + selfReliant;
+            }
+            if (regroup < total) {
+                tip += "<br>Maxed at " + regroup;
+            }
+            tip = '[' + regroup + '](#" class="showtip" title="' + tip + ')';
+            outputCard.body.push(tip + " Blast Markers are Removed");
+            leader.token.set("bar3_value",bm);
+        }
 
 
 
@@ -2551,7 +2592,7 @@ log(shooter.name)
                     aura2_options: "circleborder",
                 })
             }
-            if (unit.special.includes("Character")) {
+            if (unit.special.includes("Leader") || unit.special.includes("Commander")) {
                 formation.AddUnit(id,true);
             } else {
                 formation.AddUnit(id);
@@ -2861,6 +2902,19 @@ log("Crossfire: " + crossfire)
 }
 
 
+
+    const Regroup = (msg) => {
+        if (!msg.selected) {
+            sendChat("","Need to Select a Unit");
+            return;
+        }
+        let id = msg.selected[0]._id;
+        let unit = Units[id];
+        let formation = Formations[unit.formationID];
+        SetupCard(formation.name,"Regroup",formation.faction);
+        formation.Regroup();
+        PrintCard();
+    }
 
 
 
@@ -3325,6 +3379,9 @@ log("Crossfire: " + crossfire)
                 break;
             case '!FireBarrage':
                 FireBarrage(msg);
+                break;
+            case '!Regroup':
+                Regroup(msg);
                 break;
 
 
