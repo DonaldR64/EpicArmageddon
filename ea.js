@@ -2877,7 +2877,6 @@ const FireBarrage = () => {
         if (indirect === false && cover === false) {
             cover = coverLOS;
         }
-log("Cover " + cover)
 
         if (cover && cover !== false) {
             if (artWeapon.traits.includes("Ignore Cover")) {
