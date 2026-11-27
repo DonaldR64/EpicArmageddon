@@ -2808,6 +2808,9 @@ const FireBarrage = () => {
     let targetIDs = [];
     let rad = 1;
     if (artWeapon.name === "Orbital Bombardment") {radius = 2};
+
+//FX and Sound
+
     _.each(templates,template => {
         let cubes = HexMap[template.hexLabel].cube.radius(rad);
         _.each(cubes, cube => {
@@ -2912,12 +2915,6 @@ log("Cover " + cover)
 
 
     _.each(templates, template => {
-        //fx
-        //sound
-
-
-
-
         template.token.remove();
         delete Units[template.id];
     })
