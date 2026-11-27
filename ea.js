@@ -822,7 +822,10 @@ const EA = (() => {
             }
         }
 
-
+        CurrentBM() {
+            let leader = Units[this.leaderID];
+            return parseInt(leader.token.get("bar3_value"));
+        }
 
 
 
@@ -3277,6 +3280,39 @@ log("Crossfire: " + crossfire)
 
 
 
+const DirectFire = (msg) => {
+    let Tag = msg.content.split(";");
+    let shooterID = Tag[1];
+    let targetID = Tag[2];
+    //if target is in open and other units in cover will ignore those in cover
+
+    let shooter = Units[shooterID];
+    let target = Units[targetID];
+
+    let shooterFormation = Formations[shooter.formationID];
+    let targetFormation = Formations[target.formationID];
+
+    let formationLOS = FormationLOS(shooterFormation,targetFormation);
+
+    log(formationLOS)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
 
 
 
@@ -3383,7 +3419,9 @@ log("Crossfire: " + crossfire)
             case '!Regroup':
                 Regroup(msg);
                 break;
-
+            case '!DirectFire':
+                DirectFire(msg);
+                break;
 
         }
     };
