@@ -2807,11 +2807,11 @@ const FireBarrage = () => {
     //create array of targets under all templates, remove duplicates, group by formation
     let targetIDs = [];
     let rad = 1;
-    if (artWeapon.name === "Orbital Bombardment") {radius = 2};
-
-//FX and Sound
+    if (artWeapon.name === "Orbital Bombardment") {rad = 2};
 
     _.each(templates,template => {
+        PlaySound(artWeapon.sound);
+        FX("Blast",template.hexLabel,rad)
         let cubes = HexMap[template.hexLabel].cube.radius(rad);
         _.each(cubes, cube => {
             let ids = HexMap[cube.label()].tokenIDs;
@@ -2940,16 +2940,18 @@ log("Cover " + cover)
 
 
 
-    const FX = (type, hexLabel) => {
-        if (type === "HE") {
+    const FX = (type, hexLabel,rad = 1) => {
+        if (type.includes("Blast")) {
             const CreateExplosion = () => {
+                let labels = [hexLabel];
+                labels.push(...(HexMap[hexLabel].cube.radius(rad).map(cube => cube.label())));
+                label = labels[randomInteger(labels.length - 1)];
+
                 let dx = randomInteger(71) - 36;
                 let dy = randomInteger(71) - 36;
-                let x = HexMap[hexLabel].centre.x + dx;
-                let y = HexMap[hexLabel].centre.y + dy;
-                let colours = ["smoke","death","fire","smoke","smoke"];
-                let colour = colours[randomInteger(colours.length) - 1] || "smoke";
-                spawnFx(x,y,"pooling-" + colour);
+                let x = HexMap[label].centre.x + dx;
+                let y = HexMap[label].centre.y + dy;
+                spawnFx(x,y,"pooling-smoke");
             }
 
             let numExplosions = 10;
