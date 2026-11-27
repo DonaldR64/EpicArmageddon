@@ -1937,7 +1937,7 @@ log(shooter.name)
         let oppPlayer = (leaderUnit.player === 0) ? 1:0;
         let oppFaction = state.EA.factions[oppPlayer][0];
         _.each(Formations,formation2 => {
-            if (formation2.action === "" && Units[formation2.leaderID].Broken() === false) {
+            if (formation2.action === "" && formation2.Broken() === false) {
                 if (formation2.player === formation.player) {
                     remainingOwn = true;
                 } else {
@@ -2318,7 +2318,7 @@ log(shooter.name)
         //find friendly formations to shooterFormation
         //check if in range etc etc
         //can use linedrawA and B to see if polyLabels has hex in the line
-        let crossfire = false;
+        let result = false;
         let formKeys = Object.keys(Formations);
         crossLoop1:
         for (let i=0;i<formKeys.length;i++) {
@@ -2346,7 +2346,7 @@ log(shooter.name)
                         }
                     }
                     if (losResult.los && findCommonElements(losResult.interLabels,polyLabels)) {
-                        crossfire = true;
+                        result = true;
                         break crossLoop1;
                     }
                 }
@@ -2354,7 +2354,7 @@ log(shooter.name)
         }
         let elapsed = Date.now()-startTime;
         log("Crossfire: " + elapsed/1000 + " seconds");
-        return crossfire;
+        return result;
     }
 
 
@@ -2585,6 +2585,10 @@ log(shooter.name)
                 state.EA.strategy[player] = Factions[faction].strategy;
             }
         }
+
+        sendChat("",formName + " added to Player " + player);
+
+
     }
 
 
@@ -2594,55 +2598,13 @@ log(shooter.name)
     const UnitInfo = (msg) => {
         let id = msg.selected[0]._id;
         let unit = Units[id];
+        let formation = Formations[unit.formationID];
         if (!unit) {
             sendChat("","Not in Unit Array");
             return;
         }
-        let level = parseInt(unit.token.get("currentSide"));
-        SetupCard(unit.name,unit.hexLabel,unit.faction);
-        if (unit.Disrupted()) {
-            outputCard.body.push("Unit is Disrupted");
-        }
-        if (unit.Reduced()) {
-            outputCard.body.push("Unit is Reduced");
-        }
-        if (unit.Ready()) {
-            outputCard.body.push("Unit is Ready");
-        } else {
-            outputCard.body.push("Unit is Not Ready")
-        }
-        if (unit.type === "Helicopter") {
-            let status = unit.HeloStatus();
-            if (status === "NOE") {status = "Flying NOE"};
-            outputCard.body.push("Helicopter is " + status);
-        }
-        if (state.EA.passengerID[unit.id]) {
-            outputCard.body.push("Carrying Passenger - " + Units[state.EA.passengerID[unit.id]].name);
-        }
-        if (unit.type === "HQ" || unit.type === "Leader" || unit.type === "Support") {
-            let parentID = Object.keys(state.EA.attachedIDs).find(key => state.EA.attachedIDs[key].includes(id));
-            if (!parentID) {
-                parentID = unit.AutoAttach();
-            }
-            if (parentID) {
-                parent = Units[parentID];
-                outputCard.body.push("Attached to " + parent.name);
-            } else {
-                outputCard.body.push("Not Attached");
-            }
-        }
-        if (state.EA.attachedIDs[id]) {
-            _.each(state.EA.attachedIDs[id],id2 => {
-                let unit2 = Units[id2];
-                if (unit2) {
-                    outputCard.body.push(unit2.name + " is Attached");
-                }
-            })
-        }
-
-
-
-
+        SetupCard(unit.name,formation.name,unit.faction);
+        
         let hex = HexMap[unit.hexLabel];
         if (hex.offboard === true) {
             outputCard.body.push("Offboard");
@@ -2651,50 +2613,12 @@ log(shooter.name)
             if (hex.road === true) {
                 outputCard.body.push("Road Present");
             }
-            if (hex.improved !== false) {
-                outputCard.body.push("Improved Positions");
-            }
-            if (hex.minefield !== false) {
-                let minefield = getObj("graphic",hex.minefield);
-                if (minefield && state.EA.hiddenMinefieldLocations.includes(hex.label) === false) {
-                    outputCard.body.push(minefield.get("name"));
-                }
-            }
-            if (hex.wreck !== false) {
-                outputCard.body.push("Wrecks in Hex");
-            }
-            if (hex.rubble !== false) {
-                outputCard.body.push("Rubble in Hex");
-            }
-            if (hex.fire !== false) {
-                outputCard.body.push("Major Fires in Hex");
-            }
-            if (hex.burntOut !== false) {
-                outputCard.body.push("Burnt Out Fire");
-            }
-            if (hex.smoke !== false) {
-                let smoke = getObj("graphic",hex.smoke);
-                outputCard.body.push(smoke.get("name") + " in Hex");
-            }
-            if (hex.cleared !== false) {
-                outputCard.body.push("Hex is Cleared");
-            }
+            
 
 
 
         }
-        outputCard.body.push("[hr]")
-        let formation = state.EA.formationInfo[unit.formationID];
-        if (formation) {
-            outputCard.body.push("Formation: " + formation.name);
-            outputCard.body.push("Formation Morale/Training: " + formation.morale);
-        }
-        if (unit.type === "Leader") {
-            outputCard.body.push("Leader Morale: " + unit.leaderMorale[level]);
-        } else if (unit.type === "HQ") {
-            outputCard.body.push("Command Bonus: " + unit.command[level]);
-            outputCard.body.push("Command Range: " + formation.commandRange[level]);
-        }
+
         PrintCard();
     }
 
@@ -2748,6 +2672,9 @@ const FireBarrage = () => {
     let available = 0;
     let indirect = false;
     SetupCard(artFormation.name,"",artFormation.faction);
+    outputCard.body.push("[B]" + artWeapon.name + "[/b]");
+    outputCard.body.push("[hr]");
+
 
     artFormation.unitIDs.sort((a,b) => 
         Units[b].Distance(firstTemplate) - Units[a].Distance(firstTemplate)
@@ -2825,7 +2752,7 @@ const FireBarrage = () => {
     targetIDs = [...new Set(targetIDs)];
     let targetUnits = targetIDs.map(id => Units[id]);
     targetUnits.sort((a,b) => 
-        a.Distance(artFormationCentroid) - b.Distance(artFormationCentroid)
+        a.HexDistance(artFormationCentroid) - b.HexDistance(artFormationCentroid)
     );
     targetUnits.sort((a,b) => 
         a.formationID - b.formationID
@@ -2841,6 +2768,9 @@ const FireBarrage = () => {
     if (indirect === false && artWeapon.name.includes("Orbital") === false) {
         crossfire = Crossfire(artFormation.id,targetFormation.id);
     }
+
+log("Indirect: " + indirect)
+log("Crossfire: " + crossfire)
 
     for (let i=0;i<targetUnits.length;i++) {
         let unit = targetUnits[i];
