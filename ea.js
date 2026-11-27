@@ -1687,9 +1687,14 @@ log(shooter.name)
         if (artWeapon.traits.includes("Indirect")) {    
             outputCard.body.push("Weapons can be fired Indirect, which will Double the Max Range, with a min. range of 12");
         } else {
-            outputCard.body.push("All Artillery units must have Range and LOS to one Template");
+            let closest = (templates === 1) ? " ":" closest "
+            outputCard.body.push("All Artillery units must have Range and LOS to the"+ closest + "Template");
         }
-        outputCard.body.push("Templates must touch and be placed to maximize the # of units hit");
+        outputCard.body.push("Template" + s + " must placed to maximize the # of units hit");
+        if (templates > 1) {
+            outputCard.body.push("Templates must touch");
+        }
+
         PrintCard();
 
     }
@@ -2324,8 +2329,7 @@ log(shooter.name)
             let formation2 = Formations[formationID];
             if (formation2.player !== shooterFormation.player) {continue};
             if (formation2.action === "March") {continue};
-            let leader = Units[formation2.leaderID];
-            if (leader.Broken()) {continue};
+            if (formation2.Broken()) {continue};
             for (let j=0;j<shooterFormation.unitIDs.length;j++) {
                 let unit1 = Units[shooterFormation.unitIDs[j]];
                 for (let k=0;k<formation2.unitIDs.length;k++) {
@@ -2387,8 +2391,9 @@ log(shooter.name)
         let artLeader = Units[artFormation.leaderID];
         let blastMarkers = parseInt(artLeader.token.get("bar3_value"));
 
+
         for (let i=0;i<artFormation.unitIDs.length;i++) {
-            let artUnit = artFormation.unitIDs[i];
+            let artUnit = Units[artFormation.unitIDs[i]];
             if (!artUnit.barrageWeapon) {continue};
             let weapon = artUnit.weapons[artUnit.barrageWeapon];
             let range = parseInt(weapon.range);
@@ -2398,8 +2403,9 @@ log(shooter.name)
             if (losResult.los && losResult.distance <= range) {
                 if (blastMarkers > 0) {
                     blastMarkers--;
+                    outputCard.body.push(artUnit.name + " is Suppressed");
                 } else {
-                    outputCard.body.push(artUnit.name + " has Range & LOS for Direct Fire");
+                    outputCard.body.push(artUnit.name + ": Direct Fire");
                 }
                 continue;
             }
@@ -2426,8 +2432,9 @@ log(shooter.name)
             }
             if (blastMarkers > 0) {
                 blastMarkers--;
+                outputCard.body.push(artUnit.name + " is Suppressed");
             } else {
-                outputCard.body.push(artUnit.name + " has Range for Indirect Fire");
+                outputCard.body.push(artUnit.name + ": Indirect Fire");
             }
         }
         PrintCard();
@@ -2743,25 +2750,28 @@ const FireBarrage = () => {
     SetupCard(artFormation.name,"",artFormation.faction);
 
     artFormation.unitIDs.sort((a,b) => 
-        Units[b].Distance(barrage) - Units[a].Distance(barrage)
+        Units[b].Distance(firstTemplate) - Units[a].Distance(firstTemplate)
     )
     let artLeader = Units[artFormation.leaderID];
     let blastMarkers = parseInt(artLeader.token.get("bar3_value"));
+    let coverLOS;
 
     //run through artUnits, check that have LOS/Range or Indirect, add up BP
     for (let i=0;i<artFormation.unitIDs.length;i++) {
-        let artUnit = artFormation.unitID[i];
+        let artUnit = Units[artFormation.unitIDs[i]];
         if (!artUnit.barrageWeapon) {continue};
         let weapon = artUnit.weapons[artUnit.barrageWeapon];
         if (weapon.traits !== artWeapon.traits) {continue};
         let range = parseInt(weapon.range);
         let losResult = LOS(artUnit,firstTemplate);
         let distance = losResult.distance;
+
         if (losResult.los) {
             if (distance <= range) {
                 if (blastMarkers > 0) {
                     blastMarkers--;
                 } else {
+                    coverLOS = losResult.cover;
                     available++;
                 }
             } else if (distance >= 12 && distance <= range * 2) {
@@ -2862,10 +2872,11 @@ const FireBarrage = () => {
         if (unit.type === "Infantry") {cover = HexMap[unit.hexLabel].cover.Infantry};
         if (unit.type.includes("Vehicle")) {cover = HexMap[unit.hexLabel].cover.Vehicle};
         if (indirect === false && cover === false) {
-            let losResult = LOS(artUnits[0],unit);
-            cover = losResult.cover;
+            cover = coverLOS;
         }
-        if (cover !== false) {
+log("Cover " + cover)
+
+        if (cover && cover !== false) {
             if (artWeapon.traits.includes("Ignore Cover")) {
                 tip += "<br>Ignores Cover";
             } else {
@@ -2898,6 +2909,18 @@ const FireBarrage = () => {
 
     }
 
+
+
+    _.each(templates, template => {
+        //fx
+        //sound
+
+
+
+
+        template.token.remove();
+        delete Units[template.id];
+    })
 
 
     PrintCard();
