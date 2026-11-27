@@ -793,7 +793,15 @@ const EA = (() => {
         }
 
         AddBM(markers) {
-            if (this.Broken()) {return};
+            if (this.Broken()) {
+                //additional units take hits
+                for (let i=0;i<markers;i++) {
+                    let status = Units[this.unitIDs[i]].Damage("BM");
+                    ///
+
+                }
+                return;
+            };
             let leader = Units[this.leaderID];
             let bm = parseInt(leader.token.get("bar3_value"));
             let max = parseInt(leader.token.get("bar3_max"));
@@ -2779,7 +2787,7 @@ const FireBarrage = () => {
     //modify to hit by cover, action (sustained, marshal etc), Ignore Cover,
     let targetFormation = Formations[targetUnits[0].formationID];
     let tfStatus = targetFormation.Broken();
-    targetFormation.AddBM(1 + extraBM);
+    targetFormation.AddBM((1 + extraBM));
     let crossfire = false;
     //crossfire for this formation
     if (indirect === false && artWeapon.name.includes("Orbital") === false) {
@@ -2792,6 +2800,7 @@ const FireBarrage = () => {
             if (targetFormation.Broken() && tfStatus === false) {
                 //started unbroken, now broken
                 outputCard.body.push(targetFormation.name + " is Broken");
+                outputCard.body.push("It may make a Withdrawal Move");
             }
             outputCard.body.push("[hr]");
             targetFormation = Formations[targetUnits[0].formationID];
