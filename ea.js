@@ -646,7 +646,7 @@ const EA = (() => {
 
         MakeLeader() {
             let formation = Formations[this.formationID];
-            let aura = formation.action === "" ? "#00ff00":(formation.action === "Overwatch") ? "#ff00ff":"#000000";
+            let aura = formation.action === "" ? "#00ff00":(formation.action === "Overwatch") ? "#9900ff":"#000000";
             this.token.set({
                 aura1_color: aura,
                 aura1_opacity: 1,
@@ -687,6 +687,8 @@ const EA = (() => {
             }
             return arcs;
         }
+
+//note for shields - as shield strength diminishes, reduce opacity of aura
 
         Damage(weapon) {
 
@@ -767,24 +769,34 @@ const EA = (() => {
             if (this.unitIDs.length === 1) {
                 return true;
             }
-            let group = [this.leaderID];
-            cLoop1:
-            for (let i=0;i<this.unitIDs.length;i++) {
-                let id = this.unitIDs[i];
-                if (group.includes(id)) {continue}
-                let unit1 = Units[id];
-                for (let j=0;j<group.length;j++) {
-                    let unit2 = Units[group[j]];
-                    let dist = unit1.Distance(unit2);
-                    if (dist <= 3) {
-                        group.push(id);
-                        continue cLoop1;
+            //group units into clusters
+            const n = this.unitIDs.length;
+            const visited = new Array(n).fill(false);
+            const clusters = [];
+
+            for (let i = 0; i < n; i++) {
+                if (visited[i]) continue;
+                const cluster = [this.unitIDs[i]];
+                visited[i] = true;
+                // BFS
+                const queue = [i];
+                while (queue.length > 0) {
+                    const curr = queue.shift();
+                    for (let j = 0; j < n; j++) {
+                        if (!visited[j] && Units[this.unitIDs[curr]].Distance(Units[this.unitIDs[j]]) <= 3) {
+                            visited[j] = true;
+                            cluster.push(this.unitIDs[j]);
+                            queue.push(j);
+                        }
                     }
                 }
-                //not in coherency
+                clusters.push(cluster);
+            }
+            if (clusters.length === 1) {
+                return true;
+            } else {
                 return false;
             }
-            return true;
         }
 
         Break() {
@@ -830,9 +842,20 @@ const EA = (() => {
 
 
         SetOverwatch(over) {
-            let leaderUnit = Units[this.leaderID];
-            let aura = (over === true) ? "#ff00ff":"#000000";
-            leaderUnit.token.set("aura1_color",aura);
+            _.each(this.unitIDs,unitID => {
+                let unit = Units[unitID];
+                if (unitID === this.leaderID) {
+                    unit.token.set({
+                        aura1_color: "#9900ff",
+                        aura1_radius: 0.1
+                    })
+                } else {
+                    unit.token.set({
+                        aura1_color: "#ff00ff",
+                        aura1_radius: 0.1
+                    })
+                }
+            })
         }
 
         Centroid() {
@@ -1548,7 +1571,9 @@ const EA = (() => {
                 tint_color: "transparent",
                 aura1_color: "transparent",
                 aura1_radius: 0,
+                aura1_options: "circleborder",
                 aura2_color: "transparent",
+                aura2_options: "circleborder",
                 aura2_radius: 0,
                 showplayers_aura1: true,
                 showplayers_aura2: true,
@@ -1585,7 +1610,7 @@ const EA = (() => {
             activations: [],
             deployLines: [],
             currentBarrage: "",
-
+            lastFormationID: "",
         }
     
 
@@ -1837,13 +1862,32 @@ log(shooter.name)
 
         _.each(Formations,formation => {
             formation.action = "";
-            Units[formation.leaderID].token.set("aura1_color","#00ff00");
+            _.each(formation.unitIDs, unitID =>  {
+                let unit = Units[unitID];
+                if (unit.token.get("aura1_color") !== "#ff00ff" && unit.token.get("aura1_color") !== "#9900ff") {
+                    if (unitID === formation.leaderID) {
+                        unit.token.set("aura1_color","#00ff00");
+                    } else {
+                        unit.token.set("aura1_color","transparent");
+                    }
+                }
+            })
         })
         state.EA.activations = [];
+        state.EA.lastFormationID = "";
+
+
 
     }
 
     EndPhase = () => {
+        let lastFormation = Formations[state.EA.lastFormationID];
+        if (lastFormation && lastFormation.action !== "Overwatch") {
+            _.each(lastFormation.unitIDs,unitID => {
+                Units[unitID].token.set("aura1_color","transparent");
+            })
+            Units[lastFormation.leaderID].token.set("aura1_color","#000000");
+        }
         SetupCard("Turn " + state.EA.turn,"End Phase","Neutral");
         outputCard.body.push("Aircraft Make Disengagement Moves");
 //Resolve critical hit and other end of turn effects (alternate)
@@ -1860,6 +1904,15 @@ log(shooter.name)
         let formation = Formations[unit.formationID];
         let leaderUnit = Units[formation.leaderID];
         let action = Tag[2];
+
+    
+        let lastFormation = Formations[state.EA.lastFormationID];
+        if (lastFormation && lastFormation.id !== formation.id && lastFormation.action !== "Overwatch") {
+            _.each(lastFormation.unitIDs,unitID => {
+                Units[unitID].token.set("aura1_color","transparent");
+            })
+            Units[lastFormation.leaderID].token.set("aura1_color","#000000");
+        }
 
         let errorMsg = [];
 
@@ -1970,11 +2023,24 @@ log(shooter.name)
         }
         formation.action = action;
 
-        if (action !== "Overwatch") {
-            leaderUnit.token.set("aura1_color","#000000");
-        } else {
+        if (action === "Overwatch") {
             formation.SetOverwatch(true);
+        } else{
+            _.each(formation.unitIDs,unitID => {
+                if (unitID === formation.leaderID) {
+                    Units[unitID].token.set({
+                        aura1_color: "#0000ff",
+                        aura1_radius: 0.1
+                    })
+                } else {  
+                    Units[unitID].token.set({
+                        aura1_color: "#00ffff",
+                        aura1_radius: 0.1
+                    })
+                } 
+            })
         }
+        state.EA.lastFormationID = formation.id;
 
         let remainingOpp = false;
         let remainingOwn = false;
@@ -2589,7 +2655,7 @@ log(shooter.name)
                     bar2_value: unit.shields,
                     bar2_max: unit.shields,
                     showplayers_bar2: true,
-                    aura2_color: "#00bbff80",
+                    aura2_color: "#ffff00",
                     aura2_opacity: 1,
                     aura2_radius: 0.25,
                     aura2_options: "circleborder",
