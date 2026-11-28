@@ -3,6 +3,8 @@ const DirectFire = (msg) => {
     let shooterID = Tag[1];
     let targetID = Tag[2];
     //if target is in open and other units in cover will ignore those in cover
+    //if target is armour, will use AT weapons by preference, vs Infantry
+    
 
     let shooter = Units[shooterID];
     let target = Units[targetID];
